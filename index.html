@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HARU SNAP • Aesthetic Korean Studio Photobooth</title>
+    <title>HARU SNAP • Aesthetic Korean Studio Photobooth • Filters & Backgrounds</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -41,6 +41,23 @@
         .filter-warm { filter: sepia(25%) saturate(130%) brightness(105%) hue-rotate(-10deg); }
         .filter-cyber { filter: contrast(130%) hue-rotate(190deg) saturate(180%); }
         .filter-soft { filter: brightness(110%) contrast(90%) saturate(115%); }
+        .filter-fade { filter: brightness(105%) contrast(88%) saturate(82%) sepia(8%); }
+        .filter-vintage { filter: contrast(112%) brightness(98%) saturate(72%) sepia(18%); }
+        .filter-cool { filter: contrast(105%) brightness(103%) saturate(95%) hue-rotate(8deg); }
+
+        /* Photobooth Background Presets */
+        .bg-thumb {
+            position: relative;
+            overflow: hidden;
+        }
+        .bg-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .35;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.65), transparent 35%);
+        }
 
         /* Tactile UI Elements */
         .glass-panel {
@@ -187,6 +204,9 @@
                             <option value="filter-bw">Noir High Contrast</option>
                             <option value="filter-warm">Sunset Bloom</option>
                             <option value="filter-cyber">Neon Glow</option>
+                            <option value="filter-fade">Dreamy Fade</option>
+                            <option value="filter-vintage">Retro Vintage</option>
+                            <option value="filter-cool">Cool Studio</option>
                         </select>
                     </div>
                 </div>
@@ -247,6 +267,22 @@
                     </div>
                 </div>
 
+                <!-- Photo Background Presets -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[11px] font-semibold text-slate-400">Photo Background</label>
+                        <span id="backgroundLabel" class="text-[10px] text-slate-500">Original</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2" id="photoBackgroundPalette">
+                        <button data-background="original" class="bg-thumb h-9 rounded-xl border-2 border-rose-400 ring-2 ring-rose-400 bg-slate-800" title="Original"></button>
+                        <button data-background="studio" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-white via-slate-100 to-slate-300" title="Studio White"></button>
+                        <button data-background="pink" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-pink-200 via-rose-100 to-fuchsia-200" title="Sakura Pink"></button>
+                        <button data-background="sunset" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-orange-300 via-pink-300 to-purple-400" title="Sunset"></button>
+                        <button data-background="night" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950" title="Night Studio"></button>
+                    </div>
+                    <p class="text-[9px] text-slate-500 mt-2">Latar belakang diterapkan sebagai efek studio pada area foto.</p>
+                </div>
+
                 <!-- Cute Sticker Overlays -->
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
@@ -299,7 +335,7 @@
         let capturedPhotos = [null, null, null, null];
         let isSessionRunning = false;
         let currentTheme = 'cream';
-        let placedStickers = [];
+        let placedStickers = [];\n        let activeBackground = 'original';
 
         // Theme palette color definitions
         const THEME_CONFIGS = {
@@ -331,7 +367,7 @@
         const signatureInput = document.getElementById('signatureInput');
         const frameThemePalette = document.getElementById('frameThemePalette');
         const stickerPalette = document.getElementById('stickerPalette');
-        const clearStickersBtn = document.getElementById('clearStickersBtn');
+        const clearStickersBtn = document.getElementById('clearStickersBtn');\n        const photoBackgroundPalette = document.getElementById('photoBackgroundPalette');\n        const backgroundLabel = document.getElementById('backgroundLabel');
         const stripCanvas = document.getElementById('stripCanvas');
         const downloadBtn = document.getElementById('downloadBtn');
 
@@ -490,6 +526,9 @@
                 case 'filter-warm': return 'sepia(25%) saturate(130%) brightness(105%) hue-rotate(-10deg)';
                 case 'filter-cyber': return 'contrast(130%) hue-rotate(190deg) saturate(180%)';
                 case 'filter-soft': return 'brightness(110%) contrast(90%) saturate(115%)';
+                case 'filter-fade': return 'brightness(105%) contrast(88%) saturate(82%) sepia(8%)';
+                case 'filter-vintage': return 'contrast(112%) brightness(98%) saturate(72%) sepia(18%)';
+                case 'filter-cool': return 'contrast(105%) brightness(103%) saturate(95%) hue-rotate(8deg)';
                 default: return 'none';
             }
         }
@@ -547,6 +586,27 @@
                 frameThemePalette.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-rose-400'));
                 btn.classList.add('ring-2', 'ring-rose-400');
                 currentTheme = btn.dataset.theme;
+                renderStripCanvas();
+            });
+        });
+
+        // Photo Background Handling
+        const BACKGROUND_CONFIGS = {
+            original: { label: 'Original', type: 'none' },
+            studio: { label: 'Studio White', type: 'gradient', colors: ['#ffffff', '#e2e8f0'] },
+            pink: { label: 'Sakura Pink', type: 'gradient', colors: ['#fbcfe8', '#fce7f3', '#f5d0fe'] },
+            sunset: { label: 'Sunset', type: 'gradient', colors: ['#fdba74', '#f9a8d4', '#c4b5fd'] },
+            night: { label: 'Night Studio', type: 'gradient', colors: ['#020617', '#1e1b4b', '#581c87'] }
+        };
+
+        photoBackgroundPalette.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                photoBackgroundPalette.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('ring-2', 'ring-rose-400');
+                });
+                btn.classList.add('ring-2', 'ring-rose-400');
+                activeBackground = btn.dataset.background;
+                backgroundLabel.textContent = BACKGROUND_CONFIGS[activeBackground].label;
                 renderStripCanvas();
             });
         });
@@ -657,12 +717,44 @@
             });
         }
 
+        function drawPhotoBackground(ctx, x, y, w, h) {
+            const bg = BACKGROUND_CONFIGS[activeBackground];
+            if (!bg || bg.type === 'none') return;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+
+            if (bg.type === 'gradient') {
+                const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+                bg.colors.forEach((color, i) => {
+                    grad.addColorStop(i / (bg.colors.length - 1), color);
+                });
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, w, h);
+
+                // Soft studio light
+                const glow = ctx.createRadialGradient(
+                    x + w * 0.25, y + h * 0.18, 0,
+                    x + w * 0.25, y + h * 0.18, Math.max(w, h) * 0.7
+                );
+                glow.addColorStop(0, 'rgba(255,255,255,.45)');
+                glow.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = glow;
+                ctx.fillRect(x, y, w, h);
+            }
+
+            ctx.restore();
+        }
+
         // Draw Individual Photo Frame
         function drawSinglePhoto(ctx, imgData, x, y, w, h, config, slotNum) {
             ctx.fillStyle = config.border;
             ctx.fillRect(x, y, w, h);
 
             if (imgData) {
+                drawPhotoBackground(ctx, x, y, w, h);
                 const img = new Image();
                 img.src = imgData;
                 if (img.complete) {
@@ -688,6 +780,15 @@
                     }
 
                     ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+
+                    // Optional studio tint so the selected background visually blends
+                    // with the photo without destroying the captured image.
+                    if (activeBackground !== 'original') {
+                        ctx.fillStyle = activeBackground === 'night'
+                            ? 'rgba(30, 27, 75, 0.12)'
+                            : 'rgba(255, 255, 255, 0.08)';
+                        ctx.fillRect(x, y, w, h);
+                    }
                     ctx.restore();
                 }
             } else {
