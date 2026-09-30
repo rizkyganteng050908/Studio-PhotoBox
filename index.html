@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNAP! Ultimate PhotoBox Studio</title>
+  <title>SNAP! Ultimate PhotoBox Studio with Live Photo</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -43,7 +43,16 @@
       animation: flash-animation 0.35s ease-out forwards;
     }
 
-    /* Custom Print Rules for Photobooth Output */
+    /* Live Badge Motion Glow */
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
+    .animate-live-pulse {
+      animation: live-pulse 1.5s infinite ease-in-out;
+    }
+
+    /* Print Rules for Photobooth Output */
     @media print {
       body {
         background: white !important;
@@ -95,10 +104,16 @@
           </div>
         </div>
         <div>
-          <h1 class="font-brand font-bold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-rose-400">
-            SNAP! STUDIO
-          </h1>
-          <p class="text-[10px] text-slate-400 tracking-widest font-mono uppercase">Modular PhotoBooth Pro</p>
+          <div class="flex items-center gap-2">
+            <h1 class="font-brand font-bold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-rose-400">
+              SNAP! STUDIO
+            </h1>
+            <span class="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-live-pulse"></span>
+              LIVE PHOTO
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-400 tracking-widest font-mono uppercase">Modular Motion PhotoBooth</p>
         </div>
       </div>
 
@@ -117,7 +132,7 @@
 
   <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex flex-col lg:flex-row gap-6 no-print">
 
-    <!-- LEFT COLUMN: Camera Viewport & Capture Options -->
+    <!-- LEFT COLUMN: Camera Viewport & Controls -->
     <section class="flex-1 flex flex-col gap-5 items-center">
       
       <!-- Camera Screen Frame -->
@@ -132,7 +147,11 @@
         <!-- Countdown Screen Overlay -->
         <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/75 backdrop-blur-md hidden flex-col items-center justify-center z-20">
           <span id="countdownText" class="font-brand font-extrabold text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-2xl animate-bounce">3</span>
-          <p class="text-xs font-semibold text-slate-300 mt-4 tracking-widest uppercase">Strike a Pose!</p>
+          <div id="recordingIndicator" class="hidden items-center gap-2 mt-4 px-3 py-1 bg-rose-600/80 rounded-full text-white text-xs font-bold uppercase tracking-widest animate-pulse">
+            <i data-lucide="video" class="w-3.5 h-3.5"></i>
+            <span>Recording Live Motion...</span>
+          </div>
+          <p id="countdownSubtext" class="text-xs font-semibold text-slate-300 mt-2 tracking-widest uppercase">Strike a Pose!</p>
         </div>
 
         <!-- Viewport Top HUD -->
@@ -170,8 +189,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <label for="chkBurst" class="text-slate-400 font-medium cursor-pointer">Auto Burst:</label>
-          <input type="checkbox" id="chkBurst" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+          <label for="chkLivePhoto" class="text-slate-400 font-medium cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="video" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>Live Photo:</span>
+          </label>
+          <input type="checkbox" id="chkLivePhoto" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
         </div>
 
         <div class="flex items-center gap-2">
@@ -200,7 +222,7 @@
     </section>
 
     <!-- RIGHT COLUMN: Customization, Theme Selection & Preview -->
-    <section class="w-full lg:w-[420px] flex flex-col gap-5">
+    <section class="w-full lg:w-[440px] flex flex-col gap-5">
       
       <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 flex flex-col gap-4 shadow-xl">
         
@@ -208,39 +230,33 @@
         <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-medium">
           <button id="tabTheme" onclick="switchTab('theme')" class="tab-btn flex-1 py-2 rounded-xl bg-indigo-600 text-white transition text-center">Themes</button>
           <button id="tabLayout" onclick="switchTab('layout')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Layout</button>
-          <button id="tabText" onclick="switchTab('text')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Custom Caption</button>
+          <button id="tabText" onclick="switchTab('text')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Caption</button>
         </div>
 
         <!-- TAB CONTENT 1: Thematic Frame Selector -->
         <div id="contentTheme" class="tab-content flex flex-col gap-3">
           <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose Photobooth Theme</label>
           <div class="grid grid-cols-2 gap-2.5">
-            
-            <button onclick="applyTheme('theme-minimal')" class="theme-btn active-theme p-3 rounded-2xl bg-slate-800 border-2 border-indigo-500 text-left flex flex-col justify-between h-20 transition group hover:bg-slate-750">
+            <button onclick="applyTheme('theme-minimal')" class="theme-btn active-theme p-3 rounded-2xl bg-slate-800 border-2 border-indigo-500 text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
               <span class="text-xs font-semibold text-slate-200">Aesthetic Minimal</span>
               <span class="text-[10px] text-slate-400 font-serif italic">Soft pastel & serif</span>
             </button>
-
-            <button onclick="applyTheme('theme-birthday')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition group hover:bg-slate-750">
+            <button onclick="applyTheme('theme-birthday')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
               <span class="text-xs font-semibold text-rose-400">Birthday Party 🎉</span>
               <span class="text-[10px] text-slate-400">Festive balloons</span>
             </button>
-
-            <button onclick="applyTheme('theme-grad')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition group hover:bg-slate-750">
+            <button onclick="applyTheme('theme-grad')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
               <span class="text-xs font-semibold text-amber-400">Graduation Day 🎓</span>
               <span class="text-[10px] text-slate-400">Gold & Classy Dark</span>
             </button>
-
-            <button onclick="applyTheme('theme-retro')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition group hover:bg-slate-750">
+            <button onclick="applyTheme('theme-retro')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
               <span class="text-xs font-semibold text-cyan-400">Y2K Retro 90s 👾</span>
               <span class="text-[10px] text-slate-400">Pixel & Neon Vibez</span>
             </button>
-
-            <button onclick="applyTheme('theme-kawaii')" class="theme-btn col-span-2 p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-16 transition group hover:bg-slate-750">
+            <button onclick="applyTheme('theme-kawaii')" class="theme-btn col-span-2 p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-16 transition hover:bg-slate-750">
               <span class="text-xs font-semibold text-pink-300">Anime / Kawaii Cute ✨</span>
               <span class="text-[10px] text-slate-400">Pink pastel & cute sparkles</span>
             </button>
-
           </div>
         </div>
 
@@ -256,7 +272,6 @@
               </div>
               <span class="text-[10px] font-medium text-slate-200">3-Strip</span>
             </button>
-
             <button onclick="setLayout('strip-4')" class="layout-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 transition">
               <div class="w-5 h-10 bg-slate-700 rounded flex flex-col gap-0.5 p-0.5">
                 <div class="flex-1 bg-slate-500 rounded-sm"></div>
@@ -266,7 +281,6 @@
               </div>
               <span class="text-[10px] font-medium text-slate-200">4-Strip</span>
             </button>
-
             <button onclick="setLayout('quad-4')" class="layout-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 transition">
               <div class="w-8 h-8 bg-slate-700 rounded grid grid-cols-2 gap-0.5 p-0.5">
                 <div class="bg-slate-500 rounded-sm"></div>
@@ -283,7 +297,6 @@
         <div id="contentText" class="tab-content hidden flex-col gap-3">
           <label for="txtCaption" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Custom Header / Watermark Text</label>
           <input type="text" id="txtCaption" value="SNAP! STUDIO" placeholder="Write caption here..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-          
           <div class="flex items-center justify-between pt-2">
             <span class="text-xs text-slate-400 font-medium">Show Today's Date</span>
             <input type="checkbox" id="chkShowDate" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
@@ -292,23 +305,37 @@
 
       </div>
 
-      <!-- PREVIEW & DYNAMIC CANVAS STRIP -->
-      <div class="flex flex-col items-center bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 shadow-xl overflow-hidden">
+      <!-- PREVIEW & LIVE MOTION STRIP DISPLAY -->
+      <div class="flex flex-col items-center bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 shadow-xl overflow-hidden relative">
         <div class="flex justify-between items-center w-full mb-3">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Strip Preview</span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Strip Preview</span>
+            <span class="text-[10px] text-slate-500">(Hover photo to play motion)</span>
+          </div>
           <span id="themeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">MINIMAL</span>
         </div>
 
-        <!-- Dynamic Output Canvas Display -->
-        <div class="w-full flex justify-center py-2 overflow-x-auto">
-          <canvas id="previewCanvas" class="max-h-[420px] w-auto rounded-2xl shadow-2xl transition-all duration-300 border border-black/20"></canvas>
+        <!-- Interactive Frame Container with Live Motion Overlay -->
+        <div class="relative w-full flex justify-center py-2 overflow-x-auto" id="previewCanvasWrapper">
+          <canvas id="previewCanvas" class="max-h-[380px] w-auto rounded-2xl shadow-2xl transition-all duration-300 border border-black/20"></canvas>
+          <!-- Interactive Live Photo Player Overlay Elements (rendered dynamically) -->
+          <div id="liveMotionOverlay" class="absolute inset-0 pointer-events-none flex justify-center items-center"></div>
+        </div>
+
+        <!-- Live Photo Motion Clips Selector Panel -->
+        <div id="liveClipsPanel" class="w-full hidden flex-col gap-2 mt-3 pt-3 border-t border-slate-800">
+          <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1">
+            <i data-lucide="video" class="w-3.5 h-3.5"></i>
+            <span>Captured Live Clips</span>
+          </span>
+          <div id="liveClipsList" class="flex gap-2 overflow-x-auto pb-1"></div>
         </div>
 
         <!-- Action Control Buttons -->
         <div class="w-full grid grid-cols-3 gap-2 mt-4">
           <button id="btnDownloadPNG" class="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-xs tracking-wider transition active:scale-95 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5">
             <i data-lucide="download" class="w-4 h-4"></i>
-            <span>PNG</span>
+            <span>PNG STRIP</span>
           </button>
           
           <button id="btnOpenQR" class="py-2.5 px-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-xs tracking-wider transition active:scale-95 text-white shadow-lg shadow-purple-600/30 flex items-center justify-center gap-1.5">
@@ -328,7 +355,7 @@
 
   </main>
 
-  <!-- PRINT CONTAINER (ONLY VISIBLE IN PRINT MEDIA) -->
+  <!-- PRINT CONTAINER (PRINT MEDIA ONLY) -->
   <div id="printContainer" class="hidden no-display-screen">
     <canvas id="printAreaCanvas"></canvas>
   </div>
@@ -336,7 +363,6 @@
   <!-- QR CODE MODAL DIALOG -->
   <div id="qrModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 no-print">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 text-center shadow-2xl relative">
-      
       <button id="btnCloseQR" class="absolute top-4 right-4 p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
@@ -359,7 +385,6 @@
           <span>Copy Data Link</span>
         </button>
       </div>
-
     </div>
   </div>
 
@@ -377,16 +402,18 @@
       photoHeight: 600,
       padding: 40,
       gap: 30,
-      footerHeight: 120
+      footerHeight: 120,
+      liveRecordDurationMs: 2200 // Live photo recording length in ms
     };
 
     let state = {
-      photos: [],             // Array of captured data URLs
+      photos: [],             // Array of captured static photo Data URLs
+      liveClips: [],          // Array of WebM Blob URLs for Live Motion Clips
       currentLayout: 'strip-3',// 'strip-3', 'strip-4', 'quad-4'
       currentFilter: 'filter-normal',
       currentTheme: 'theme-minimal',
       countdownTime: 3,
-      isBurstMode: true,
+      isLivePhotoEnabled: true,
       isMirror: true,
       soundEnabled: true,
       customCaption: 'SNAP! STUDIO',
@@ -401,14 +428,19 @@
       btnSoundToggle: document.getElementById('btnSoundToggle'),
       countdownOverlay: document.getElementById('countdownOverlay'),
       countdownText: document.getElementById('countdownText'),
+      countdownSubtext: document.getElementById('countdownSubtext'),
+      recordingIndicator: document.getElementById('recordingIndicator'),
       photoCounterText: document.getElementById('photoCounterText'),
       flashOverlay: document.getElementById('flashOverlay'),
       previewCanvas: document.getElementById('previewCanvas'),
+      previewCanvasWrapper: document.getElementById('previewCanvasWrapper'),
       printAreaCanvas: document.getElementById('printAreaCanvas'),
-      printContainer: document.getElementById('printContainer'),
       themeBadge: document.getElementById('themeBadge'),
       txtCaption: document.getElementById('txtCaption'),
       chkShowDate: document.getElementById('chkShowDate'),
+      chkLivePhoto: document.getElementById('chkLivePhoto'),
+      liveClipsPanel: document.getElementById('liveClipsPanel'),
+      liveClipsList: document.getElementById('liveClipsList'),
       qrModal: document.getElementById('qrModal'),
       qrcodeBox: document.getElementById('qrcodeBox'),
       btnCloseQR: document.getElementById('btnCloseQR'),
@@ -418,16 +450,20 @@
       btnPrintJob: document.getElementById('btnPrintJob')
     };
 
+    let mediaStream = null;
+    let activeMediaRecorder = null;
+    let recordedChunks = [];
+
     /* ==========================================================================
        2. CAMERA & AUDIO MODULE
        ========================================================================== */
     async function initCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' },
           audio: false
         });
-        DOM.webcam.srcObject = stream;
+        DOM.webcam.srcObject = mediaStream;
       } catch (err) {
         alert('Camera Access Error: Please ensure webcam permissions are enabled.');
         console.error('Webcam Init Failure:', err);
@@ -476,7 +512,54 @@
     }
 
     /* ==========================================================================
-       3. PHOTO CAPTURE & TIMER SEQUENCER
+       3. LIVE PHOTO RECORDING ENGINE (MediaRecorder API)
+       ========================================================================== */
+    function recordLivePhotoClip() {
+      return new Promise((resolve) => {
+        if (!state.isLivePhotoEnabled || !mediaStream) {
+          resolve(null);
+          return;
+        }
+
+        recordedChunks = [];
+        try {
+          const options = { mimeType: 'video/webm;codecs=vp8' };
+          activeMediaRecorder = new MediaRecorder(mediaStream, MediaRecorder.isTypeSupported(options.mimeType) ? options : undefined);
+
+          activeMediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+          };
+
+          activeMediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const videoUrl = URL.createObjectURL(blob);
+            resolve(videoUrl);
+          };
+
+          activeMediaRecorder.start(100);
+          
+          // Show Recording Badge in UI
+          DOM.recordingIndicator.classList.remove('hidden');
+          DOM.recordingIndicator.classList.add('flex');
+
+          // Stop recording after designated live duration
+          setTimeout(() => {
+            if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
+              activeMediaRecorder.stop();
+            }
+            DOM.recordingIndicator.classList.remove('flex');
+            DOM.recordingIndicator.classList.add('hidden');
+          }, CONFIG.liveRecordDurationMs);
+
+        } catch (err) {
+          console.warn('MediaRecorder error or unsupported:', err);
+          resolve(null);
+        }
+      });
+    }
+
+    /* ==========================================================================
+       4. PHOTO CAPTURE & TIMER SEQUENCER
        ========================================================================== */
     function getMaxPhotos() {
       return (state.currentLayout === 'strip-3') ? 3 : 4;
@@ -492,7 +575,7 @@
       DOM.btnStartCapture.disabled = true;
       DOM.btnStartCapture.classList.add('opacity-50', 'pointer-events-none');
 
-      function nextShot() {
+      async function nextShot() {
         if (state.photos.length >= max) {
           DOM.btnStartCapture.disabled = false;
           DOM.btnStartCapture.classList.remove('opacity-50', 'pointer-events-none');
@@ -503,21 +586,36 @@
         DOM.countdownOverlay.classList.add('flex');
         let counter = state.countdownTime;
         DOM.countdownText.innerText = counter;
+        DOM.countdownSubtext.innerText = state.isLivePhotoEnabled ? "Hold position for Live Motion!" : "Strike a Pose!";
 
-        const timerInterval = setInterval(() => {
+        const timerInterval = setInterval(async () => {
           counter--;
           if (counter > 0) {
             DOM.countdownText.innerText = counter;
           } else {
             clearInterval(timerInterval);
-            DOM.countdownOverlay.classList.remove('flex');
-            DOM.countdownOverlay.classList.add('hidden');
+
+            // Start Live Recording concurrently with shutter snap
+            const liveRecordingPromise = recordLivePhotoClip();
 
             triggerFlashEffect();
             playShutterSound();
             captureSingleFrame();
 
-            if (state.isBurstMode && state.photos.length < max) {
+            // Wait for Live Video clip chunk if enabled
+            const liveClipUrl = await liveRecordingPromise;
+            if (liveClipUrl) {
+              state.liveClips.push(liveClipUrl);
+            } else {
+              state.liveClips.push(null);
+            }
+
+            DOM.countdownOverlay.classList.remove('flex');
+            DOM.countdownOverlay.classList.add('hidden');
+
+            renderPhotoStrip();
+
+            if (state.photos.length < max) {
               setTimeout(nextShot, 1200);
             } else {
               DOM.btnStartCapture.disabled = false;
@@ -550,11 +648,10 @@
 
       ctx.drawImage(DOM.webcam, 0, 0, tempCanvas.width, tempCanvas.height);
       state.photos.push(tempCanvas.toDataURL('image/png'));
-      renderPhotoStrip();
     }
 
     /* ==========================================================================
-       4. THEMES & CANVAS STRIP BUILDER
+       5. THEMES & CANVAS STRIP BUILDER
        ========================================================================== */
     const THEME_PRESETS = {
       'theme-minimal': {
@@ -659,6 +756,7 @@
             loadedImages++;
             if (loadedImages === state.photos.length) {
               renderStripFooterText(ctx, canvas, theme);
+              updateLiveClipsUI();
             }
           };
           img.src = state.photos[i];
@@ -683,6 +781,7 @@
 
       if (state.photos.length === 0) {
         renderStripFooterText(ctx, canvas, theme);
+        updateLiveClipsUI();
       }
     }
 
@@ -728,7 +827,171 @@
     }
 
     /* ==========================================================================
-       5. PRINT & QR CODE MODULES
+       6. LIVE MOTION PLAYBACK & CLIPS LIST UI
+       ========================================================================== */
+    function updateLiveClipsUI() {
+      DOM.liveClipsList.innerHTML = '';
+      const hasClips = state.liveClips.some(c => c !== null);
+
+      if (!hasClips) {
+        DOM.liveClipsPanel.classList.add('hidden');
+        DOM.liveClipsPanel.classList.remove('flex');
+        return;
+      }
+
+      DOM.liveClipsPanel.classList.remove('hidden');
+      DOM.liveClipsPanel.classList.add('flex');
+
+      state.liveClips.forEach((url, idx) => {
+        if (!url) return;
+        const item = document.createElement('div');
+        item.className = 'flex items-center gap-2 p-2 bg-slate-950 rounded-xl border border-slate-800 shrink-0 text-xs';
+        
+        item.innerHTML = `
+          <div class="flex items-center gap-1.5 font-medium text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            <span>Live #${idx + 1}</span>
+          </div>
+          <button onclick="downloadLiveClip('${url}', ${idx})" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Download Live Motion Clip">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        DOM.liveClipsList.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function downloadLiveClip(url, index) {
+      const link = document.createElement('a');
+      link.download = `live-photo-clip-${index + 1}-${Date.now()}.webm`;
+      link.href = url;
+      link.click();
+    }
+
+    /* Hover Live Motion Playback Listener on Preview Canvas */
+    function attachLiveMotionPreviewHover() {
+      const wrapper = DOM.previewCanvasWrapper;
+      let activeVideoElem = null;
+
+      wrapper.addEventListener('mousemove', (e) => {
+        if (state.photos.length === 0 || state.liveClips.length === 0) return;
+
+        const rect = DOM.previewCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        if (mouseX < 0 || mouseY < 0 || mouseX > rect.width || mouseY > rect.height) {
+          stopMotionPlayback();
+          return;
+        }
+
+        // Convert DOM coordinates to Canvas coordinates
+        const scaleX = DOM.previewCanvas.width / rect.width;
+        const scaleY = DOM.previewCanvas.height / rect.height;
+
+        const canvasX = mouseX * scaleX;
+        const canvasY = mouseY * scaleY;
+
+        // Determine which photo slot is hovered
+        const hoveredSlot = getHoveredPhotoSlot(canvasX, canvasY);
+
+        if (hoveredSlot !== null && state.liveClips[hoveredSlot]) {
+          playMotionVideoAtSlot(hoveredSlot, rect);
+        } else {
+          stopMotionPlayback();
+        }
+      });
+
+      wrapper.addEventListener('mouseleave', stopMotionPlayback);
+
+      function stopMotionPlayback() {
+        if (activeVideoElem) {
+          activeVideoElem.pause();
+          activeVideoElem.remove();
+          activeVideoElem = null;
+        }
+      }
+
+      function playMotionVideoAtSlot(slotIdx, rect) {
+        if (activeVideoElem && activeVideoElem.dataset.slot === String(slotIdx)) return;
+        stopMotionPlayback();
+
+        const videoUrl = state.liveClips[slotIdx];
+        if (!videoUrl) return;
+
+        const max = getMaxPhotos();
+        const photoW = CONFIG.photoWidth;
+        const photoH = CONFIG.photoHeight;
+        const pad = CONFIG.padding;
+        const gap = CONFIG.gap;
+
+        let slotX, slotY;
+        if (state.currentLayout === 'quad-4') {
+          const col = slotIdx % 2;
+          const row = Math.floor(slotIdx / 2);
+          slotX = pad + col * (photoW + gap);
+          slotY = pad + row * (photoH + gap);
+        } else {
+          slotX = pad;
+          slotY = pad + slotIdx * (photoH + gap);
+        }
+
+        // Map Canvas slot coordinates back to CSS DOM Overlay coordinates
+        const scaleX = rect.width / DOM.previewCanvas.width;
+        const scaleY = rect.height / DOM.previewCanvas.height;
+
+        const domX = (rect.left - wrapper.getBoundingClientRect().left) + (slotX * scaleX);
+        const domY = (rect.top - wrapper.getBoundingClientRect().top) + (slotY * scaleY);
+        const domW = photoW * scaleX;
+        const domH = photoH * scaleY;
+
+        const video = document.createElement('video');
+        video.dataset.slot = String(slotIdx);
+        video.src = videoUrl;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.className = 'absolute rounded-xl object-cover pointer-events-none shadow-2xl z-20 border-2 border-rose-500';
+        video.style.left = `${domX}px`;
+        video.style.top = `${domY}px`;
+        video.style.width = `${domW}px`;
+        video.style.height = `${domH}px`;
+
+        wrapper.appendChild(video);
+        activeVideoElem = video;
+      }
+    }
+
+    function getHoveredPhotoSlot(x, y) {
+      const max = getMaxPhotos();
+      const photoW = CONFIG.photoWidth;
+      const photoH = CONFIG.photoHeight;
+      const pad = CONFIG.padding;
+      const gap = CONFIG.gap;
+
+      for (let i = 0; i < max; i++) {
+        let slotX, slotY;
+        if (state.currentLayout === 'quad-4') {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          slotX = pad + col * (photoW + gap);
+          slotY = pad + row * (photoH + gap);
+        } else {
+          slotX = pad;
+          slotY = pad + i * (photoH + gap);
+        }
+
+        if (x >= slotX && x <= slotX + photoW && y >= slotY && y <= slotY + photoH) {
+          return i;
+        }
+      }
+      return null;
+    }
+
+    /* ==========================================================================
+       7. PRINT & QR CODE MODULES
        ========================================================================== */
     function generateQRCode() {
       if (state.photos.length === 0) {
@@ -741,7 +1004,7 @@
       
       // Generate Client-Side QR Code
       new QRCode(DOM.qrcodeBox, {
-        text: dummyDataUrl.substring(0, 500), // Encodes preview identifier
+        text: dummyDataUrl.substring(0, 500),
         width: 180,
         height: 180,
         colorDark : "#0f172a",
@@ -765,7 +1028,7 @@
     }
 
     /* ==========================================================================
-       6. EVENT LISTENERS & UI NAVIGATION
+       8. UI CONTROL EVENT HANDLERS
        ========================================================================== */
     function applyFilter(filterClass) {
       state.currentFilter = filterClass;
@@ -796,6 +1059,7 @@
     function setLayout(layoutType) {
       state.currentLayout = layoutType;
       state.photos = [];
+      state.liveClips = [];
       document.querySelectorAll('.layout-btn').forEach(b => {
         b.classList.remove('border-indigo-500');
         b.classList.add('border-transparent');
@@ -834,8 +1098,9 @@
     function attachEventListeners() {
       DOM.btnStartCapture.addEventListener('click', runCaptureSequence);
       DOM.btnNewSession.addEventListener('click', () => {
-        if (confirm('Start new photo session? Current photos will be cleared.')) {
+        if (confirm('Start new photo session? Current photos and Live Motion clips will be cleared.')) {
           state.photos = [];
+          state.liveClips = [];
           renderPhotoStrip();
         }
       });
@@ -850,6 +1115,10 @@
         const soundIcon = document.getElementById('soundIcon');
         soundIcon.setAttribute('data-lucide', state.soundEnabled ? 'volume-2' : 'volume-x');
         lucide.createIcons();
+      });
+
+      DOM.chkLivePhoto.addEventListener('change', (e) => {
+        state.isLivePhotoEnabled = e.target.checked;
       });
 
       DOM.txtCaption.addEventListener('input', (e) => {
@@ -897,10 +1166,12 @@
           state.countdownTime = parseInt(e.target.dataset.timer);
         });
       });
+
+      attachLiveMotionPreviewHover();
     }
 
     /* ==========================================================================
-       7. INITIALIZATION
+       9. APP INITIALIZATION
        ========================================================================== */
     window.onload = () => {
       initCamera();
