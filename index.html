@@ -1,272 +1,812 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhotoBox Studio</title>
-  <!-- Tailwind CSS via CDN -->
+  <title>SNAP! Ultimate PhotoBox Studio</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* Utility class mirror untuk webcam */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .font-brand {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
     .mirror {
       transform: scaleX(-1);
     }
     
-    /* Pre-styled photo filters */
+    /* Live Canvas / Video Filters */
     .filter-normal { filter: none; }
-    .filter-bw { filter: grayscale(100%); }
-    .filter-sepia { filter: sepia(80%); }
-    .filter-vintage { filter: contrast(110%) brightness(110%) sepia(30%) hue-rotate(-10deg); }
-    .filter-warm { filter: sepia(30%) saturate(140%); }
+    .filter-bw { filter: grayscale(100%) contrast(110%); }
+    .filter-sepia { filter: sepia(85%) contrast(105%); }
+    .filter-vintage { filter: contrast(115%) brightness(105%) sepia(35%) hue-rotate(-10deg) saturate(120%); }
+    .filter-warm { filter: sepia(25%) saturate(150%) brightness(105%); }
+    .filter-cool { filter: hue-rotate(30deg) saturate(120%) brightness(105%); }
+    .filter-cyber { filter: contrast(125%) hue-rotate(180deg) saturate(200%); }
+    .filter-soft { filter: brightness(115%) contrast(90%) saturate(110%); }
+
+    /* Flash Animation Effect */
+    @keyframes flash-animation {
+      0% { opacity: 0.95; }
+      100% { opacity: 0; }
+    }
+    .shutter-flash {
+      animation: flash-animation 0.35s ease-out forwards;
+    }
+
+    /* Print styling rules */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printArea, #printArea * {
+        visibility: visible !important;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.8);
+    }
   </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between font-sans antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
-  <!-- Header -->
-  <header class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur sticky top-0 z-50">
-    <div class="flex items-center gap-2">
-      <div class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></div>
-      <h1 class="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">SNAP! PHOTOBOX</h1>
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-rose-500 to-amber-400 p-0.5 shadow-lg shadow-indigo-500/20">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+            <i data-lucide="camera" class="w-5 h-5 text-indigo-400"></i>
+          </div>
+        </div>
+        <div>
+          <h1 class="font-brand font-bold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-rose-400">
+            SNAP! STUDIO
+          </h1>
+          <p class="text-[10px] text-slate-400 tracking-widest font-mono uppercase">Interactive PhotoBooth Pro</p>
+        </div>
+      </div>
+
+      <!-- Quick Session Info -->
+      <div class="flex items-center gap-3">
+        <div id="statusBadge" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="statusText">Camera Active</span>
+        </div>
+        <button id="resetSessionBtn" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>New Session</span>
+        </button>
+      </div>
     </div>
-    <span class="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30">Studio Edition</span>
   </header>
 
-  <!-- Main Content Area -->
-  <main class="container mx-auto p-4 flex-1 flex flex-col lg:flex-row gap-8 items-center justify-center my-auto">
-    
-    <!-- Camera Viewport Section -->
-    <div class="flex flex-col items-center gap-4 w-full max-w-md">
-      <div class="relative w-full aspect-[3/4] bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80 flex items-center justify-center">
+  <!-- Main Studio Workspace -->
+  <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex flex-col lg:flex-row gap-6">
+
+    <!-- LEFT COLUMN: Camera Viewport & Capture Options -->
+    <section class="flex-1 flex flex-col gap-5 items-center">
+      
+      <!-- Camera Screen Frame -->
+      <div class="relative w-full max-w-lg aspect-[3/4] bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl shadow-indigo-950/40 flex items-center justify-center group">
         
-        <!-- Live Video -->
+        <!-- Live Video Element -->
         <video id="webcam" autoplay playsinline class="w-full h-full object-cover mirror filter-normal transition-all duration-300"></video>
 
-        <!-- Countdown Overlay -->
-        <div id="countdownOverlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex-col items-center justify-center z-20">
-          <span id="countdownText" class="text-9xl font-black text-white drop-shadow-lg animate-ping">3</span>
+        <!-- Shutter Flash Overlay -->
+        <div id="flashOverlay" class="absolute inset-0 bg-white pointer-events-none hidden z-30"></div>
+
+        <!-- Timer / Countdown Screen Overlay -->
+        <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/70 backdrop-blur-md hidden flex-col items-center justify-center z-20 transition-all">
+          <span id="countdownText" class="font-brand font-extrabold text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-2xl animate-bounce">3</span>
+          <p id="captureMessage" class="text-sm font-medium text-slate-300 mt-4 tracking-wider uppercase">Get Ready & Strike a Pose!</p>
         </div>
 
-        <!-- Camera Controls (Floating) -->
+        <!-- Overlay HUD Icons -->
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10 pointer-events-none">
+          <div class="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[11px] font-mono text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="disc" class="w-3.5 h-3.5 text-rose-500 animate-spin"></i>
+            <span id="photoCounterText">0 / 3 SHOTS</span>
+          </div>
+          
+          <button id="toggleMirrorBtn" class="pointer-events-auto p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/60 text-slate-200 transition" title="Toggle Mirror View">
+            <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Floating Camera Trigger Button (When manually capturing) -->
         <div class="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-4 z-10">
-          <button id="captureBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white p-5 rounded-full shadow-2xl hover:shadow-indigo-500/50 transition transform active:scale-90 border-4 border-slate-900 group">
-            <svg class="w-8 h-8 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-              <circle cx="12" cy="13" r="3" stroke-width="2"></circle>
-            </svg>
+          <button id="startCaptureBtn" class="relative group/btn bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 p-1 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition duration-200">
+            <div class="bg-slate-950 p-4 rounded-full flex items-center gap-2 px-6">
+              <i data-lucide="camera" class="w-6 h-6 text-indigo-400 group-hover/btn:scale-110 transition"></i>
+              <span class="font-bold text-sm tracking-wide text-white">TAKE PHOTOS</span>
+            </div>
           </button>
         </div>
       </div>
 
-      <!-- Filter Presets -->
-      <div class="w-full bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 flex justify-around gap-1 text-xs">
-        <button onclick="setFilter('filter-normal')" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition">Normal</button>
-        <button onclick="setFilter('filter-bw')" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition">B&W</button>
-        <button onclick="setFilter('filter-sepia')" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition">Sepia</button>
-        <button onclick="setFilter('filter-vintage')" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition">Vintage</button>
-        <button onclick="setFilter('filter-warm')" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition">Warm</button>
-      </div>
-    </div>
-
-    <!-- Frame & Customization Panel -->
-    <div class="w-full max-w-sm bg-slate-800/80 p-6 rounded-3xl border border-slate-700/80 shadow-xl flex flex-col gap-6">
-      
-      <!-- Frame Color Picker -->
-      <div>
-        <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-2">Pilih Warna Frame</h2>
-        <div class="flex gap-3">
-          <button onclick="setFrameColor('#1e293b')" class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-600 focus:ring-2 focus:ring-indigo-400 transition transform hover:scale-110" title="Dark"></button>
-          <button onclick="setFrameColor('#ffffff')" class="w-9 h-9 rounded-full bg-white border-2 border-slate-300 focus:ring-2 focus:ring-indigo-400 transition transform hover:scale-110" title="White"></button>
-          <button onclick="setFrameColor('#f43f5e')" class="w-9 h-9 rounded-full bg-rose-500 border-2 border-rose-400 focus:ring-2 focus:ring-rose-400 transition transform hover:scale-110" title="Rose"></button>
-          <button onclick="setFrameColor('#6366f1')" class="w-9 h-9 rounded-full bg-indigo-500 border-2 border-indigo-400 focus:ring-2 focus:ring-indigo-400 transition transform hover:scale-110" title="Indigo"></button>
-          <button onclick="setFrameColor('#f59e0b')" class="w-9 h-9 rounded-full bg-amber-500 border-2 border-amber-400 focus:ring-2 focus:ring-amber-400 transition transform hover:scale-110" title="Amber"></button>
-        </div>
-      </div>
-
-      <!-- Result Preview Box -->
-      <div class="flex flex-col items-center">
-        <h3 class="text-xs font-medium text-slate-400 mb-2 self-start uppercase tracking-wider">Preview Result</h3>
-        
-        <!-- Live Strip Container -->
-        <div id="photoStrip" class="w-48 p-3 rounded-xl bg-slate-800 transition-colors duration-300 flex flex-col gap-2 shadow-2xl border border-slate-700">
-          <div class="w-full aspect-[4/3] bg-slate-700/40 rounded border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 font-medium">Foto 1</div>
-          <div class="w-full aspect-[4/3] bg-slate-700/40 rounded border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 font-medium">Foto 2</div>
-          <div class="w-full aspect-[4/3] bg-slate-700/40 rounded border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 font-medium">Foto 3</div>
-          
-          <div class="pt-2 text-center">
-            <span class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">SNAP! STUDIO</span>
+      <!-- Shoot Settings & Timers -->
+      <div class="w-full max-w-lg bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 flex flex-wrap gap-4 items-center justify-between text-xs">
+        <!-- Countdown Choice -->
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-medium">Timer:</span>
+          <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button data-timer="3" class="timer-opt px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium transition">3s</button>
+            <button data-timer="5" class="timer-opt px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition">5s</button>
+            <button data-timer="10" class="timer-opt px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition">10s</button>
           </div>
         </div>
+
+        <!-- Burst Mode Toggle -->
+        <div class="flex items-center gap-2">
+          <label for="burstToggle" class="text-slate-400 font-medium cursor-pointer">Auto Burst:</label>
+          <input type="checkbox" id="burstToggle" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer">
+        </div>
+
+        <!-- Sound Toggle -->
+        <div class="flex items-center gap-2">
+          <button id="soundToggleBtn" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Toggle Shutter Audio">
+            <i data-lucide="volume-2" class="w-4 h-4" id="soundIcon"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex gap-3 pt-2">
-        <button id="resetBtn" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-medium text-sm transition active:scale-95 text-slate-200">Reset</button>
-        <button id="downloadBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium text-sm transition active:scale-95 text-white shadow-lg shadow-indigo-600/30">Unduh Strip</button>
+      <!-- Live CSS Filters Slider/Bar -->
+      <div class="w-full max-w-lg bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <i data-lucide="wand2" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Color Preset Filters</span>
+        </h3>
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <button onclick="applyFilter('filter-normal')" class="filter-btn active-filter px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-medium shrink-0 transition">Normal</button>
+          <button onclick="applyFilter('filter-vintage')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Vintage</button>
+          <button onclick="applyFilter('filter-bw')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">B&W Film</button>
+          <button onclick="applyFilter('filter-sepia')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Retro Sepia</button>
+          <button onclick="applyFilter('filter-warm')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Warm Glow</button>
+          <button onclick="applyFilter('filter-cool')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Cool Blue</button>
+          <button onclick="applyFilter('filter-cyber')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Cyberpunk</button>
+          <button onclick="applyFilter('filter-soft')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Soft Portrait</button>
+        </div>
       </div>
 
-    </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Photostrip Customization & Live Render -->
+    <section class="w-full lg:w-96 flex flex-col gap-5">
+      
+      <!-- Studio Controls Container -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 flex flex-col gap-5 shadow-xl">
+        
+        <!-- Tabbed Customization Options -->
+        <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-medium">
+          <button id="tabLayout" onclick="switchTab('layout')" class="tab-btn flex-1 py-2 rounded-xl bg-indigo-600 text-white transition text-center">Layout</button>
+          <button id="tabFrame" onclick="switchTab('frame')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Frame & Text</button>
+          <button id="tabStickers" onclick="switchTab('stickers')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Stickers</button>
+        </div>
+
+        <!-- TAB CONTENT 1: Layout Selection -->
+        <div id="contentLayout" class="tab-content flex flex-col gap-3">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose Strip Format</label>
+          <div class="grid grid-cols-3 gap-2">
+            
+            <button onclick="setLayout('strip-3')" class="layout-opt p-3 rounded-2xl bg-slate-800 border-2 border-indigo-500 text-center flex flex-col items-center gap-2 hover:bg-slate-750 transition group">
+              <div class="w-6 h-12 bg-slate-700 rounded p-1 flex flex-col gap-1">
+                <div class="flex-1 bg-slate-500 rounded"></div>
+                <div class="flex-1 bg-slate-500 rounded"></div>
+                <div class="flex-1 bg-slate-500 rounded"></div>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">3-Strip</span>
+            </button>
+
+            <button onclick="setLayout('strip-4')" class="layout-opt p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 hover:bg-slate-750 transition group">
+              <div class="w-6 h-12 bg-slate-700 rounded p-1 flex flex-col gap-0.5">
+                <div class="flex-1 bg-slate-500 rounded"></div>
+                <div class="flex-1 bg-slate-500 rounded"></div>
+                <div class="flex-1 bg-slate-500 rounded"></div>
+                <div class="flex-1 bg-slate-500 rounded"></div>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">4-Strip</span>
+            </button>
+
+            <button onclick="setLayout('quad-4')" class="layout-opt p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 hover:bg-slate-750 transition group">
+              <div class="w-10 h-10 bg-slate-700 rounded p-1 grid grid-cols-2 gap-1">
+                <div class="bg-slate-500 rounded"></div>
+                <div class="bg-slate-500 rounded"></div>
+                <div class="bg-slate-500 rounded"></div>
+                <div class="bg-slate-500 rounded"></div>
+              </div>
+              <span class="text-[11px] font-medium text-slate-200">2x2 Quad</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 2: Frame Colors & Custom Text Label -->
+        <div id="contentFrame" class="tab-content hidden flex-col gap-4">
+          <!-- Frame Color Presets -->
+          <div>
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Frame Color Preset</label>
+            <div class="flex flex-wrap gap-2.5 items-center">
+              <button onclick="setFrameColor('#1e293b')" class="w-8 h-8 rounded-full bg-slate-800 border-2 border-slate-600 focus:scale-110 transition shadow" title="Slate Dark"></button>
+              <button onclick="setFrameColor('#ffffff')" class="w-8 h-8 rounded-full bg-white border-2 border-slate-300 focus:scale-110 transition shadow" title="Pure White"></button>
+              <button onclick="setFrameColor('#f472b6')" class="w-8 h-8 rounded-full bg-pink-400 border-2 border-pink-300 focus:scale-110 transition shadow" title="Pastel Pink"></button>
+              <button onclick="setFrameColor('#38bdf8')" class="w-8 h-8 rounded-full bg-sky-400 border-2 border-sky-300 focus:scale-110 transition shadow" title="Pastel Blue"></button>
+              <button onclick="setFrameColor('#4ade80')" class="w-8 h-8 rounded-full bg-green-400 border-2 border-green-300 focus:scale-110 transition shadow" title="Mint Green"></button>
+              <button onclick="setFrameColor('#c084fc')" class="w-8 h-8 rounded-full bg-purple-400 border-2 border-purple-300 focus:scale-110 transition shadow" title="Lavender"></button>
+              <button onclick="setFrameColor('#22d3ee')" class="w-8 h-8 rounded-full bg-cyan-400 border-2 border-cyan-300 focus:scale-110 transition shadow" title="Neon Cyan"></button>
+              
+              <!-- Custom Hex Color Picker -->
+              <div class="relative w-8 h-8 rounded-full overflow-hidden border-2 border-slate-600 hover:scale-110 transition cursor-pointer">
+                <input type="color" id="customColorPicker" onchange="setFrameColor(this.value)" value="#6366f1" class="absolute -top-2 -left-2 w-12 h-12 cursor-pointer bg-transparent border-0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Footer Label & Date -->
+          <div class="flex flex-col gap-2 pt-2 border-t border-slate-800">
+            <label for="customTextLabel" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Custom Header/Footer Text</label>
+            <input type="text" id="customTextLabel" value="SNAP! STUDIO" placeholder="Type custom caption..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            
+            <div class="flex items-center justify-between mt-1">
+              <span class="text-xs text-slate-400 font-medium">Show Date Stamp</span>
+              <input type="checkbox" id="showDateToggle" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 3: Decorative Stickers Overlay -->
+        <div id="contentStickers" class="tab-content hidden flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Click Sticker to Add</label>
+            <button onclick="clearStickers()" class="text-[11px] text-rose-400 hover:text-rose-300 font-medium">Clear All</button>
+          </div>
+          <div class="grid grid-cols-5 gap-2 p-2 bg-slate-950 rounded-2xl border border-slate-800 text-xl text-center">
+            <button onclick="addSticker('❤️')" class="p-2 hover:bg-slate-800 rounded-xl transition">❤️</button>
+            <button onclick="addSticker('✨')" class="p-2 hover:bg-slate-800 rounded-xl transition">✨</button>
+            <button onclick="addSticker('👑')" class="p-2 hover:bg-slate-800 rounded-xl transition">👑</button>
+            <button onclick="addSticker('🕶️')" class="p-2 hover:bg-slate-800 rounded-xl transition">🕶️</button>
+            <button onclick="addSticker('🎀')" class="p-2 hover:bg-slate-800 rounded-xl transition">🎀</button>
+            <button onclick="addSticker('🐱')" class="p-2 hover:bg-slate-800 rounded-xl transition">🐱</button>
+            <button onclick="addSticker('🌸')" class="p-2 hover:bg-slate-800 rounded-xl transition">🌸</button>
+            <button onclick="addSticker('🔥')" class="p-2 hover:bg-slate-800 rounded-xl transition">🔥</button>
+            <button onclick="addSticker('⭐')" class="p-2 hover:bg-slate-800 rounded-xl transition">⭐</button>
+            <button onclick="addSticker('🎉')" class="p-2 hover:bg-slate-800 rounded-xl transition">🎉</button>
+          </div>
+          <p class="text-[10px] text-slate-500 italic">Click stickers on the preview to drag or position them.</p>
+        </div>
+
+      </div>
+
+      <!-- PREVIEW CANVAS STRIP CONTAINER -->
+      <div class="flex flex-col items-center bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 shadow-xl overflow-hidden">
+        <div class="flex justify-between items-center w-full mb-3">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Strip Preview</span>
+          <span id="layoutBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">3-STRIP</span>
+        </div>
+
+        <!-- Renderable Photo Strip Frame Box -->
+        <div id="printArea" class="w-full flex justify-center py-2 overflow-x-auto">
+          <div id="photoStrip" class="relative w-52 p-3.5 rounded-2xl bg-slate-800 transition-all duration-300 shadow-2xl border border-black/20 flex flex-col gap-2.5 select-none">
+            
+            <!-- Dynamic Slots Rendered Here -->
+            <div id="slotsContainer" class="flex flex-col gap-2.5">
+              <!-- JS Populates image placeholders -->
+            </div>
+
+            <!-- Footer Caption Bar -->
+            <div id="stripFooter" class="pt-2 text-center flex flex-col items-center justify-center">
+              <span id="stripFooterText" class="text-[11px] font-extrabold tracking-widest text-slate-300 uppercase">SNAP! STUDIO</span>
+              <span id="stripFooterDate" class="text-[9px] font-mono text-slate-400 mt-0.5">30/09/2026</span>
+            </div>
+
+            <!-- Sticker Overlay Container Layer -->
+            <div id="stickerLayer" class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+              <!-- Draggable / Clicked stickers appear here -->
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Action Export Buttons -->
+        <div class="w-full flex gap-2.5 mt-5">
+          <button id="downloadBtn" class="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-xs tracking-wider transition active:scale-95 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>DOWNLOAD</span>
+          </button>
+          
+          <button id="printBtn" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-semibold text-xs transition active:scale-95 text-slate-200 border border-slate-700 flex items-center justify-center gap-2" title="Print Photo Strip">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>PRINT</span>
+          </button>
+        </div>
+
+      </div>
+
+    </section>
 
   </main>
 
-  <!-- Hidden Processing Canvas -->
-  <canvas id="hiddenCanvas" class="hidden"></canvas>
+  <!-- Offscreen High-Res Canvas for Render Export -->
+  <canvas id="exportCanvas" class="hidden"></canvas>
 
   <!-- Footer -->
-  <footer class="p-4 text-center text-xs text-slate-500 border-t border-slate-800/80">
-    &copy; 2026 SNAP! PhotoBox Studio. Built for Web Browsers.
+  <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-800/80 bg-slate-950">
+    &copy; 2026 SNAP! Studio Application. Powered by HTML5 & WebRTC.
   </footer>
 
-  <!-- JavaScript Logic -->
+  <!-- Application Logic JavaScript -->
   <script>
-    const video = document.getElementById('webcam');
-    const captureBtn = document.getElementById('captureBtn');
+    // Global Application State
+    let photos = [];
+    let currentLayout = 'strip-3'; // 'strip-3', 'strip-4', 'quad-4'
+    let currentFilter = 'filter-normal';
+    let selectedFrameColor = '#1e293b';
+    let countdownTime = 3;
+    let isBurstMode = true;
+    let isMirror = true;
+    let soundEnabled = true;
+    let stickers = []; // Array of sticker objects { id, emoji, x, y }
+
+    // DOM References
+    const webcam = document.getElementById('webcam');
+    const startCaptureBtn = document.getElementById('startCaptureBtn');
     const countdownOverlay = document.getElementById('countdownOverlay');
     const countdownText = document.getElementById('countdownText');
+    const photoCounterText = document.getElementById('photoCounterText');
+    const flashOverlay = document.getElementById('flashOverlay');
     const photoStrip = document.getElementById('photoStrip');
-    const hiddenCanvas = document.getElementById('hiddenCanvas');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const stickerLayer = document.getElementById('stickerLayer');
+    const stripFooterText = document.getElementById('stripFooterText');
+    const stripFooterDate = document.getElementById('stripFooterDate');
+    const customTextLabel = document.getElementById('customTextLabel');
+    const showDateToggle = document.getElementById('showDateToggle');
+    const exportCanvas = document.getElementById('exportCanvas');
 
-    let photos = [];
-    let selectedFrameColor = '#1e293b';
-    let currentFilter = 'filter-normal';
+    // Web Audio Synthesizer for Shutter Sound Effect (No External Files Required)
+    function playShutterSound() {
+      if (!soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // White noise buffer for camera click sound
+        const bufferSize = audioCtx.sampleRate * 0.08;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
 
-    // 1. Inisialisasi Kamera
-    async function initCamera() {
+        const whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = buffer;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+        whiteNoise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        whiteNoise.start();
+      } catch (e) {
+        console.warn('Audio Context error or blocked:', e);
+      }
+    }
+
+    // Initialize Camera Stream
+    async function initWebcam() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: "user" },
+          video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' },
           audio: false
         });
-        video.srcObject = stream;
+        webcam.srcObject = stream;
       } catch (err) {
-        alert("Gagal mengakses kamera. Pastikan browser diizinkan mengakses webcam.");
-        console.error("Camera access error:", err);
+        alert('Gagal membuka kamera: Mohon izinkan akses webcam pada browser Anda.');
+        console.error('Webcam error:', err);
       }
     }
 
-    // 2. Terapkan Filter Gambar
-    function setFilter(filterClass) {
-      currentFilter = filterClass;
-      video.className = `w-full h-full object-cover mirror ${filterClass} transition-all duration-300`;
-    }
-
-    // 3. Kontrol Countdown & Tangkap Foto
-    captureBtn.addEventListener('click', () => {
-      if (photos.length >= 3) {
-        alert("Strip foto sudah penuh (3/3). Klik 'Reset' untuk mengulang!");
-        return;
+    // Toggle Mirror View
+    document.getElementById('toggleMirrorBtn').addEventListener('click', () => {
+      isMirror = !isMirror;
+      if (isMirror) {
+        webcam.classList.add('mirror');
+      } else {
+        webcam.classList.remove('mirror');
       }
-      startCountdown(3, capturePhoto);
     });
 
-    function startCountdown(seconds, callback) {
-      countdownOverlay.classList.remove('hidden');
-      countdownOverlay.classList.add('flex');
-      let counter = seconds;
-      countdownText.innerText = counter;
-
-      const timer = setInterval(() => {
-        counter--;
-        if (counter > 0) {
-          countdownText.innerText = counter;
-        } else {
-          clearInterval(timer);
-          countdownOverlay.classList.remove('flex');
-          countdownOverlay.classList.add('hidden');
-          callback();
-        }
-      }, 1000);
-    }
-
-    // 4. Tangkap Foto dari Video Stream
-    function capturePhoto() {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-
-      // Mirroring canvas agar hasil sama persis dengan preview kamera
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-
-      // Terapkan filter ke konteks canvas jika dipilih
-      if (currentFilter !== 'filter-normal') {
-        if (currentFilter === 'filter-bw') ctx.filter = 'grayscale(100%)';
-        else if (currentFilter === 'filter-sepia') ctx.filter = 'sepia(80%)';
-        else if (currentFilter === 'filter-vintage') ctx.filter = 'contrast(110%) brightness(110%) sepia(30%)';
-        else if (currentFilter === 'filter-warm') ctx.filter = 'sepia(30%) saturate(140%)';
+    // Sound Toggle Controls
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      const soundIcon = document.getElementById('soundIcon');
+      if (soundEnabled) {
+        soundIcon.setAttribute('data-lucide', 'volume-2');
+      } else {
+        soundIcon.setAttribute('data-lucide', 'volume-x');
       }
+      lucide.createIcons();
+    });
 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Timer Selector Logic
+    document.querySelectorAll('.timer-opt').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.timer-opt').forEach(b => {
+          b.classList.remove('bg-indigo-600', 'text-white');
+          b.classList.add('text-slate-400');
+        });
+        e.target.classList.remove('text-slate-400');
+        e.target.classList.add('bg-indigo-600', 'text-white');
+        countdownTime = parseInt(e.target.dataset.timer);
+      });
+    });
 
-      const dataUrl = canvas.toDataURL('image/png');
-      photos.push(dataUrl);
-      updatePhotoStrip();
-    }
+    // Burst Mode Toggle
+    document.getElementById('burstToggle').addEventListener('change', (e) => {
+      isBurstMode = e.target.checked;
+    });
 
-    // 5. Render Hasil pada Strip Foto UI
-    function updatePhotoStrip() {
-      photoStrip.style.backgroundColor = selectedFrameColor;
-      photoStrip.innerHTML = '';
-
-      // Tampilkan Foto yang Sudah Diambil
-      photos.forEach((src) => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.className = "w-full aspect-[4/3] object-cover rounded shadow border border-black/10";
-        photoStrip.appendChild(img);
+    // Tab Navigation Switcher
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white');
+        b.classList.add('text-slate-400');
+      });
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.add('hidden');
+        c.classList.remove('flex');
       });
 
-      // Tampilkan Slot Placeholder
-      for (let i = photos.length; i < 3; i++) {
-        const placeholder = document.createElement('div');
-        placeholder.className = "w-full aspect-[4/3] bg-slate-700/40 rounded border border-dashed border-slate-600 flex items-center justify-center text-xs text-slate-500 font-medium";
-        placeholder.innerText = `Foto ${i + 1}`;
-        photoStrip.appendChild(placeholder);
+      if (tabName === 'layout') {
+        document.getElementById('tabLayout').classList.add('bg-indigo-600', 'text-white');
+        document.getElementById('contentLayout').classList.remove('hidden');
+        document.getElementById('contentLayout').classList.add('flex');
+      } else if (tabName === 'frame') {
+        document.getElementById('tabFrame').classList.add('bg-indigo-600', 'text-white');
+        document.getElementById('contentFrame').classList.remove('hidden');
+        document.getElementById('contentFrame').classList.add('flex');
+      } else if (tabName === 'stickers') {
+        document.getElementById('tabStickers').classList.add('bg-indigo-600', 'text-white');
+        document.getElementById('contentStickers').classList.remove('hidden');
+        document.getElementById('contentStickers').classList.add('flex');
       }
+    }
 
-      // Footer Merk Strip Foto
-      const brand = document.createElement('div');
-      brand.className = "pt-2 text-center";
+    // Apply Live Filter
+    function applyFilter(filterClass) {
+      currentFilter = filterClass;
+      webcam.className = `w-full h-full object-cover ${isMirror ? 'mirror' : ''} ${filterClass} transition-all duration-300`;
       
-      // Mengatur warna teks berdasarkan kecerahan background frame
-      const isLightFrame = selectedFrameColor === '#ffffff';
-      brand.innerHTML = `<span class="text-[10px] font-bold tracking-widest ${isLightFrame ? 'text-slate-800' : 'text-slate-300'} uppercase">SNAP! STUDIO</span>`;
-      photoStrip.appendChild(brand);
-    }
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white');
+        b.classList.add('bg-slate-800', 'text-slate-300');
+      });
+      event.target.classList.remove('bg-slate-800', 'text-slate-300');
+      event.target.classList.add('bg-indigo-600', 'text-white');
 
-    // 6. Ganti Warna Bingkai
-    function setFrameColor(color) {
-      selectedFrameColor = color;
       updatePhotoStrip();
     }
 
-    // 7. Reset Aplikasi
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      photos = [];
+    // Layout Selector
+    function setLayout(layoutType) {
+      currentLayout = layoutType;
+      photos = []; // Clear photo array on layout change
+      
+      document.querySelectorAll('.layout-opt').forEach(b => {
+        b.classList.remove('border-indigo-500');
+        b.classList.add('border-transparent');
+      });
+      event.currentTarget.classList.remove('border-transparent');
+      event.currentTarget.classList.add('border-indigo-500');
+
+      const layoutBadge = document.getElementById('layoutBadge');
+      if (layoutType === 'strip-3') layoutBadge.innerText = '3-STRIP';
+      else if (layoutType === 'strip-4') layoutBadge.innerText = '4-STRIP';
+      else if (layoutType === 'quad-4') layoutBadge.innerText = '2x2 QUAD';
+
       updatePhotoStrip();
+    }
+
+    // Get Maximum Photo Capacity for current layout
+    function getMaxPhotos() {
+      return (currentLayout === 'strip-3') ? 3 : 4;
+    }
+
+    // Start Photo Capture Process
+    startCaptureBtn.addEventListener('click', () => {
+      const max = getMaxPhotos();
+      if (photos.length >= max) {
+        alert(`Session is full (${max}/${max}). Click 'New Session' to restart.`);
+        return;
+      }
+      runCaptureSequence();
     });
 
-    // 8. Unduh Hasil Foto Strip (Canvas Rendering)
+    // Capture Sequence with Countdown
+    function runCaptureSequence() {
+      startCaptureBtn.disabled = true;
+      startCaptureBtn.classList.add('opacity-50', 'pointer-events-none');
+
+      const max = getMaxPhotos();
+
+      function nextShot() {
+        if (photos.length >= max) {
+          finishCaptureSequence();
+          return;
+        }
+
+        countdownOverlay.classList.remove('hidden');
+        countdownOverlay.classList.add('flex');
+        let counter = countdownTime;
+        countdownText.innerText = counter;
+
+        const timerInterval = setInterval(() => {
+          counter--;
+          if (counter > 0) {
+            countdownText.innerText = counter;
+          } else {
+            clearInterval(timerInterval);
+            countdownOverlay.classList.remove('flex');
+            countdownOverlay.classList.add('hidden');
+            
+            // Flash + Sound + Take Photo
+            triggerShutterFlash();
+            playShutterSound();
+            takeSnap();
+
+            if (isBurstMode && photos.length < max) {
+              setTimeout(nextShot, 1200); // 1.2s delay between shots
+            } else {
+              finishCaptureSequence();
+            }
+          }
+        }, 1000);
+      }
+
+      nextShot();
+    }
+
+    function finishCaptureSequence() {
+      startCaptureBtn.disabled = false;
+      startCaptureBtn.classList.remove('opacity-50', 'pointer-events-none');
+    }
+
+    // Trigger Visual Shutter Flash
+    function triggerShutterFlash() {
+      flashOverlay.classList.remove('hidden');
+      flashOverlay.classList.add('shutter-flash');
+      setTimeout(() => {
+        flashOverlay.classList.remove('shutter-flash');
+        flashOverlay.classList.add('hidden');
+      }, 350);
+    }
+
+    // Capture Single Snap into Memory Array
+    function takeSnap() {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = webcam.videoWidth || 640;
+      tempCanvas.height = webcam.videoHeight || 480;
+      const ctx = tempCanvas.getContext('2d');
+
+      if (isMirror) {
+        ctx.translate(tempCanvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+
+      // Apply filter onto snapshot canvas
+      if (currentFilter !== 'filter-normal') {
+        if (currentFilter === 'filter-bw') ctx.filter = 'grayscale(100%) contrast(110%)';
+        else if (currentFilter === 'filter-sepia') ctx.filter = 'sepia(85%) contrast(105%)';
+        else if (currentFilter === 'filter-vintage') ctx.filter = 'contrast(115%) brightness(105%) sepia(35%)';
+        else if (currentFilter === 'filter-warm') ctx.filter = 'sepia(25%) saturate(150%)';
+        else if (currentFilter === 'filter-cool') ctx.filter = 'hue-rotate(30deg) saturate(120%)';
+        else if (currentFilter === 'filter-cyber') ctx.filter = 'contrast(125%) hue-rotate(180deg) saturate(200%)';
+        else if (currentFilter === 'filter-soft') ctx.filter = 'brightness(115%) contrast(90%)';
+      }
+
+      ctx.drawImage(webcam, 0, 0, tempCanvas.width, tempCanvas.height);
+      const dataUrl = tempCanvas.toDataURL('image/png');
+      photos.push(dataUrl);
+
+      updatePhotoStrip();
+    }
+
+    // Update Photo Strip DOM Layout & Render
+    function updatePhotoStrip() {
+      const max = getMaxPhotos();
+      photoCounterText.innerText = `${photos.length} / ${max} SHOTS`;
+      
+      photoStrip.style.backgroundColor = selectedFrameColor;
+      slotsContainer.innerHTML = '';
+
+      // Set grid or column layout based on selection
+      if (currentLayout === 'quad-4') {
+        slotsContainer.className = "grid grid-cols-2 gap-2";
+      } else {
+        slotsContainer.className = "flex flex-col gap-2.5";
+      }
+
+      // Render Captured Photos
+      photos.forEach((src, idx) => {
+        const slot = document.createElement('div');
+        slot.className = "relative group/slot rounded-xl overflow-hidden aspect-[4/3] bg-slate-900 shadow border border-black/10";
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = "w-full h-full object-cover";
+
+        // Retake Individual Photo Button Overlay
+        const retakeBtn = document.createElement('button');
+        retakeBtn.className = "absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white opacity-0 group-hover/slot:opacity-100 transition hover:bg-rose-600";
+        retakeBtn.title = "Retake this photo";
+        retakeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        retakeBtn.onclick = () => retakeSinglePhoto(idx);
+
+        slot.appendChild(img);
+        slot.appendChild(retakeBtn);
+        slotsContainer.appendChild(slot);
+      });
+
+      // Render Empty Placeholders
+      for (let i = photos.length; i < max; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.className = "w-full aspect-[4/3] bg-black/10 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center text-[10px] text-slate-400 font-medium";
+        placeholder.innerHTML = `<span>Frame ${i + 1}</span>`;
+        slotsContainer.appendChild(placeholder);
+      }
+
+      // Sync Custom Label Text & Date
+      stripFooterText.innerText = customTextLabel.value.trim() || 'SNAP! STUDIO';
+      
+      const isLightFrame = (selectedFrameColor === '#ffffff' || selectedFrameColor === '#4ade80' || selectedFrameColor === '#38bdf8' || selectedFrameColor === '#f472b6');
+      stripFooterText.className = `text-[11px] font-extrabold tracking-widest ${isLightFrame ? 'text-slate-800' : 'text-slate-200'} uppercase`;
+      stripFooterDate.className = `text-[9px] font-mono ${isLightFrame ? 'text-slate-600' : 'text-slate-400'} mt-0.5`;
+
+      if (showDateToggle.checked) {
+        const today = new Date();
+        const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+        stripFooterDate.innerText = formattedDate;
+        stripFooterDate.classList.remove('hidden');
+      } else {
+        stripFooterDate.classList.add('hidden');
+      }
+    }
+
+    // Retake Individual Photo
+    function retakeSinglePhoto(index) {
+      photos.splice(index, 1);
+      updatePhotoStrip();
+    }
+
+    // Frame Color Selector
+    function setFrameColor(hexColor) {
+      selectedFrameColor = hexColor;
+      updatePhotoStrip();
+    }
+
+    // Dynamic Sticker Controls
+    function addSticker(emoji) {
+      const stickerEl = document.createElement('div');
+      stickerEl.className = "absolute text-2xl pointer-events-auto cursor-grab active:cursor-grabbing select-none hover:scale-125 transition-transform";
+      stickerEl.innerText = emoji;
+      stickerEl.style.left = '40%';
+      stickerEl.style.top = '40%';
+
+      // Make Sticker Draggable inside frame
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      stickerEl.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = stickerEl.offsetLeft;
+        initialTop = stickerEl.offsetTop;
+        e.stopPropagation();
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        stickerEl.style.left = `${initialLeft + dx}px`;
+        stickerEl.style.top = `${initialTop + dy}px`;
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // Right click or double click to remove sticker
+      stickerEl.addEventListener('dblclick', () => {
+        stickerEl.remove();
+      });
+
+      stickerLayer.appendChild(stickerEl);
+    }
+
+    function clearStickers() {
+      stickerLayer.innerHTML = '';
+    }
+
+    // Reset Session Button
+    document.getElementById('resetSessionBtn').addEventListener('click', () => {
+      if (confirm('Start a new photo session? Current photos will be cleared.')) {
+        photos = [];
+        clearStickers();
+        updatePhotoStrip();
+      }
+    });
+
+    // Custom Label Input Listener
+    customTextLabel.addEventListener('input', updatePhotoStrip);
+    showDateToggle.addEventListener('change', updatePhotoStrip);
+
+    // High-Resolution Image Download Rendering (Canvas Export)
     document.getElementById('downloadBtn').addEventListener('click', () => {
       if (photos.length === 0) {
-        alert("Silakan ambil minimal 1 foto terlebih dahulu!");
+        alert('Silakan ambil foto terlebih dahulu sebelum mengunduh!');
         return;
       }
 
-      const canvas = hiddenCanvas;
+      const canvas = exportCanvas;
       const ctx = canvas.getContext('2d');
 
-      const itemWidth = 600;
-      const itemHeight = 450;
-      const padding = 30;
-      const gap = 20;
-      const footerHeight = 80;
+      const photoWidth = 800;
+      const photoHeight = 600;
+      const padding = 40;
+      const gap = 30;
+      const footerHeight = 120;
+      const max = photos.length;
 
-      const totalPhotos = photos.length;
-      canvas.width = itemWidth + (padding * 2);
-      canvas.height = (itemHeight * totalPhotos) + (gap * (totalPhotos - 1)) + (padding * 2) + footerHeight;
+      if (currentLayout === 'quad-4') {
+        const rows = Math.ceil(max / 2);
+        canvas.width = (photoWidth * 2) + gap + (padding * 2);
+        canvas.height = (photoHeight * rows) + (gap * (rows - 1)) + (padding * 2) + footerHeight;
+      } else {
+        canvas.width = photoWidth + (padding * 2);
+        canvas.height = (photoHeight * max) + (gap * (max - 1)) + (padding * 2) + footerHeight;
+      }
 
-      // Draw background frame
+      // Draw Frame Background
       ctx.fillStyle = selectedFrameColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -274,21 +814,48 @@
       photos.forEach((src, index) => {
         const img = new Image();
         img.onload = () => {
-          const yPos = padding + index * (itemHeight + gap);
-          ctx.drawImage(img, padding, yPos, itemWidth, itemHeight);
+          let x, y;
+          if (currentLayout === 'quad-4') {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            x = padding + col * (photoWidth + gap);
+            y = padding + row * (photoHeight + gap);
+          } else {
+            x = padding;
+            y = padding + index * (photoHeight + gap);
+          }
+
+          // Draw Rounded Rect Photo Clip
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(x, y, photoWidth, photoHeight, 20);
+          ctx.clip();
+          ctx.drawImage(img, x, y, photoWidth, photoHeight);
+          ctx.restore();
+
           loadedCount++;
 
-          if (loadedCount === totalPhotos) {
-            // Draw Branding Text
-            ctx.fillStyle = (selectedFrameColor === '#ffffff') ? '#1e293b' : '#ffffff';
-            ctx.font = 'bold 24px sans-serif';
+          if (loadedCount === max) {
+            // Render Footer Text & Watermark Label
+            const isLight = (selectedFrameColor === '#ffffff' || selectedFrameColor === '#4ade80' || selectedFrameColor === '#38bdf8' || selectedFrameColor === '#f472b6');
+            ctx.fillStyle = isLight ? '#1e293b' : '#f8fafc';
+            ctx.font = 'bold 36px "Space Grotesk", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('SNAP! PHOTOBOX STUDIO', canvas.width / 2, canvas.height - 35);
 
-            // Export to File Image Download
+            const footerY = canvas.height - (footerHeight / 2) + 10;
+            const textVal = customTextLabel.value.trim() || 'SNAP! STUDIO';
+            ctx.fillText(textVal.toUpperCase(), canvas.width / 2, footerY);
+
+            if (showDateToggle.checked) {
+              ctx.font = '22px monospace';
+              ctx.fillStyle = isLight ? '#64748b' : '#94a3b8';
+              ctx.fillText(stripFooterDate.innerText, canvas.width / 2, footerY + 35);
+            }
+
+            // Export PNG
             const link = document.createElement('a');
-            link.download = `photobox-${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.download = `photobox-snap-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
           }
         };
@@ -296,8 +863,21 @@
       });
     });
 
-    // Jalankan Kamera
-    initCamera();
+    // Print Photo Strip Action
+    document.getElementById('printBtn').addEventListener('click', () => {
+      if (photos.length === 0) {
+        alert('Silakan ambil foto terlebih dahulu sebelum mencetak!');
+        return;
+      }
+      window.print();
+    });
+
+    // Initialize Camera and Lucide Icons on Load
+    window.onload = () => {
+      initWebcam();
+      updatePhotoStrip();
+      lucide.createIcons();
+    };
   </script>
 </body>
 </html>
