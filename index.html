@@ -1,1184 +1,642 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNAP! Ultimate PhotoBox Studio with Live Photo</title>
+  <title>SNAP! Ultimate PhotoBox Studio</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- QRCode.js CDN for client-side QR Code generation -->
+  <!-- QRCode.js library CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Press+Start+2P&family=Fredoka:wght@500;600;700&display=swap');
-
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    
-    .font-brand { font-family: 'Space Grotesk', sans-serif; }
-    .font-serif-theme { font-family: 'Playfair Display', serif; }
-    .font-retro-theme { font-family: 'Press Start 2P', monospace; }
-    .font-kawaii-theme { font-family: 'Fredoka', cursive; }
-
-    .mirror { transform: scaleX(-1); }
-
-    /* CSS Live Camera Filters */
-    .filter-normal { filter: none; }
-    .filter-bw { filter: grayscale(100%) contrast(110%); }
-    .filter-sepia { filter: sepia(85%) contrast(105%); }
-    .filter-vintage { filter: contrast(115%) brightness(105%) sepia(35%) saturate(120%); }
-    .filter-warm { filter: sepia(25%) saturate(150%) brightness(105%); }
-    .filter-soft { filter: brightness(115%) contrast(90%) saturate(110%); }
-
-    /* Flash Animation Effect */
-    @keyframes flash-animation {
-      0% { opacity: 0.95; }
-      100% { opacity: 0; }
-    }
-    .shutter-flash {
-      animation: flash-animation 0.35s ease-out forwards;
-    }
-
-    /* Live Badge Motion Glow */
-    @keyframes live-pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.95); }
-    }
-    .animate-live-pulse {
-      animation: live-pulse 1.5s infinite ease-in-out;
-    }
-
-    /* Print Rules for Photobooth Output */
+    /* Styling khusus cetak (Print Mode) */
     @media print {
-      body {
-        background: white !important;
-        color: black !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      header, nav, section, footer, #qrModal, .no-print {
-        display: none !important;
-      }
-      #printContainer {
-        display: flex !important;
+      body * { visibility: hidden; }
+      #printableArea, #printableArea * { visibility: visible; }
+      #printableArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: flex;
         justify-content: center;
         align-items: center;
-        width: 100vw;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-        page-break-after: always;
-      }
-      #printAreaCanvas {
-        max-width: 100%;
-        max-height: 100vh;
-        object-fit: contain;
-        box-shadow: none !important;
-        border: none !important;
-      }
-      @page {
-        size: auto;
-        margin: 0;
       }
     }
-
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-indigo-500 selection:text-white">
 
-  <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-rose-500 to-amber-400 p-0.5 shadow-lg shadow-indigo-500/20">
-          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-            <i data-lucide="camera" class="w-5 h-5 text-indigo-400"></i>
-          </div>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-brand font-bold text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-rose-400">
-              SNAP! STUDIO
-            </h1>
-            <span class="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-live-pulse"></span>
-              LIVE PHOTO
-            </span>
-          </div>
-          <p class="text-[10px] text-slate-400 tracking-widest font-mono uppercase">Modular Motion PhotoBooth</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="cameraStatusText">Camera Ready</span>
-        </div>
-        <button id="btnNewSession" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
-          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-          <span>New Session</span>
-        </button>
+  <!-- Header -->
+  <header class="p-4 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-indigo-500/30">S!</div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight leading-tight text-white">SNAP! Studio</h1>
+        <p class="text-[10px] text-indigo-400 font-medium">Modular PhotoBox & Live Motion Reel</p>
       </div>
     </div>
+    <span class="text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">v3.0 Layouts & Live Motion</span>
   </header>
 
-  <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex flex-col lg:flex-row gap-6 no-print">
-
-    <!-- LEFT COLUMN: Camera Viewport & Controls -->
-    <section class="flex-1 flex flex-col gap-5 items-center">
+  <!-- Main Work Area -->
+  <main class="container mx-auto p-4 md:p-6 flex-1 flex flex-col lg:flex-row gap-6 items-start justify-center max-w-7xl">
+    
+    <!-- LEFT PANEL: Camera Viewport & Motion Reel Preview -->
+    <div class="w-full lg:w-1/2 flex flex-col gap-4">
       
-      <!-- Camera Screen Frame -->
-      <div class="relative w-full max-w-lg aspect-[3/4] bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl shadow-indigo-950/40 flex items-center justify-center">
+      <!-- Video Viewport Container -->
+      <div class="relative w-full aspect-[4/3] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center">
+        <!-- Live Camera Stream -->
+        <video id="webcam" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
         
-        <!-- Live Video Element -->
-        <video id="webcam" autoplay playsinline class="w-full h-full object-cover mirror filter-normal transition-all duration-300"></video>
+        <!-- Camera Flash Overlay -->
+        <div id="flashOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150"></div>
 
-        <!-- Flash Effect Overlay -->
-        <div id="flashOverlay" class="absolute inset-0 bg-white pointer-events-none opacity-0 z-30"></div>
-
-        <!-- Countdown Screen Overlay -->
-        <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/75 backdrop-blur-md hidden flex-col items-center justify-center z-20">
-          <span id="countdownText" class="font-brand font-extrabold text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-2xl animate-bounce">3</span>
-          <div id="recordingIndicator" class="hidden items-center gap-2 mt-4 px-3 py-1 bg-rose-600/80 rounded-full text-white text-xs font-bold uppercase tracking-widest animate-pulse">
-            <i data-lucide="video" class="w-3.5 h-3.5"></i>
-            <span>Recording Live Motion...</span>
-          </div>
-          <p id="countdownSubtext" class="text-xs font-semibold text-slate-300 mt-2 tracking-widest uppercase">Strike a Pose!</p>
+        <!-- Countdown Overlay -->
+        <div id="countdownOverlay" class="absolute inset-0 bg-black/70 backdrop-blur-sm hidden flex flex-col items-center justify-center">
+          <span id="countdownText" class="text-9xl font-black text-white animate-bounce">3</span>
+          <p id="captureStatusText" class="text-sm font-medium text-slate-300 mt-4 bg-slate-800/80 px-4 py-1.5 rounded-full border border-slate-700">Persiapan...</p>
         </div>
 
-        <!-- Viewport Top HUD -->
-        <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10 pointer-events-none">
-          <div class="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-[11px] font-mono text-slate-200 flex items-center gap-2">
-            <span id="hudShotBadge" class="w-2 h-2 rounded-full bg-indigo-500"></span>
-            <span id="photoCounterText">0 / 3 SHOTS</span>
-          </div>
-          
-          <button id="btnToggleMirror" class="pointer-events-auto p-2 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 hover:bg-black/70 text-slate-200 transition" title="Toggle Mirroring">
-            <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <!-- Capture Trigger Button -->
-        <div class="absolute bottom-6 left-0 right-0 flex justify-center items-center z-10">
-          <button id="btnStartCapture" class="group/btn bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 p-1 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition duration-200">
-            <div class="bg-slate-950 p-4 rounded-full flex items-center gap-2.5 px-6">
-              <i data-lucide="camera" class="w-6 h-6 text-indigo-400 group-hover/btn:scale-110 transition"></i>
-              <span class="font-bold text-sm tracking-wider text-white">START SHOOT</span>
-            </div>
-          </button>
+        <!-- Layout Badge on Camera -->
+        <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-700/80 text-slate-300 px-3 py-1 rounded-full text-xs font-semibold shadow">
+          Layout: <span id="currentLayoutBadge" class="text-indigo-400">3-Photo Strip</span>
         </div>
       </div>
 
-      <!-- Shoot Settings Bar -->
-      <div class="w-full max-w-lg bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 flex flex-wrap gap-4 items-center justify-between text-xs">
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400 font-medium">Timer:</span>
-          <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-            <button data-timer="3" class="timer-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium transition">3s</button>
-            <button data-timer="5" class="timer-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition">5s</button>
-            <button data-timer="10" class="timer-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition">10s</button>
+      <!-- Action Buttons -->
+      <div class="flex gap-3">
+        <button id="btnStartSession" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/25 transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <span>📸</span>
+          <span>Mulai Sesi Foto</span>
+        </button>
+        <button id="btnReset" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3.5 px-5 rounded-2xl border border-slate-700 transition active:scale-[0.98]">
+          🔄 Reset
+        </button>
+      </div>
+
+      <!-- Combined Live Motion Reel Player Box -->
+      <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-3xl flex flex-col gap-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Live Motion Reel (Combined Video)</h3>
+          </div>
+          <span id="reelStatusBadge" class="text-[10px] text-slate-500 bg-slate-800 px-2.5 py-0.5 rounded-full">Belum Terekam</span>
+        </div>
+
+        <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 flex items-center justify-center">
+          <video id="combinedReelVideo" controls loop playsinline class="w-full h-full object-cover hidden"></video>
+          <div id="reelPlaceholder" class="text-center p-6 text-slate-600">
+            <p class="text-3xl mb-2">🎞️</p>
+            <p class="text-xs">Selesaikan sesi foto untuk melihat gabungan rekaman gerakan video *Live Photo* Anda di sini.</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label for="chkLivePhoto" class="text-slate-400 font-medium cursor-pointer flex items-center gap-1.5">
-            <i data-lucide="video" class="w-3.5 h-3.5 text-rose-400"></i>
-            <span>Live Photo:</span>
-          </label>
-          <input type="checkbox" id="chkLivePhoto" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button id="btnSoundToggle" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Toggle Shutter Audio">
-            <i data-lucide="volume-2" class="w-4 h-4" id="soundIcon"></i>
-          </button>
-        </div>
+        <button id="btnDownloadVideoReel" disabled class="w-full bg-slate-800 opacity-50 cursor-not-allowed hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2">
+          <span>🎬</span>
+          <span>Unduh Video Live Motion (.webm)</span>
+        </button>
       </div>
 
-      <!-- Live CSS Camera Filters -->
-      <div class="w-full max-w-lg bg-slate-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80">
-        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
-          <span>Color Presets</span>
-        </h3>
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          <button onclick="applyFilter('filter-normal')" class="filter-btn active-filter px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-medium shrink-0 transition">Normal</button>
-          <button onclick="applyFilter('filter-vintage')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Vintage</button>
-          <button onclick="applyFilter('filter-bw')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">B&W Film</button>
-          <button onclick="applyFilter('filter-sepia')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Retro Sepia</button>
-          <button onclick="applyFilter('filter-warm')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Warm Glow</button>
-          <button onclick="applyFilter('filter-soft')" class="filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium shrink-0 transition">Soft Portrait</button>
-        </div>
-      </div>
+    </div>
 
-    </section>
-
-    <!-- RIGHT COLUMN: Customization, Theme Selection & Preview -->
-    <section class="w-full lg:w-[440px] flex flex-col gap-5">
+    <!-- RIGHT PANEL: Customization & Photo Output -->
+    <div class="w-full lg:w-1/2 flex flex-col gap-5 bg-slate-900/60 border border-slate-800 p-5 md:p-6 rounded-3xl">
       
-      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 flex flex-col gap-4 shadow-xl">
-        
-        <!-- Customization Tabs -->
-        <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-medium">
-          <button id="tabTheme" onclick="switchTab('theme')" class="tab-btn flex-1 py-2 rounded-xl bg-indigo-600 text-white transition text-center">Themes</button>
-          <button id="tabLayout" onclick="switchTab('layout')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Layout</button>
-          <button id="tabText" onclick="switchTab('text')" class="tab-btn flex-1 py-2 rounded-xl text-slate-400 hover:text-white transition text-center">Caption</button>
+      <!-- Layout & Theme Selectors -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Layout Selection -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Pilih Layout</label>
+          <select id="layoutSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="strip3">3-Photo Strip</option>
+            <option value="strip4">4-Photo Strip</option>
+            <option value="grid2x2">2x2 Quad Grid</option>
+            <option value="polaroid">Single Polaroid</option>
+          </select>
         </div>
 
-        <!-- TAB CONTENT 1: Thematic Frame Selector -->
-        <div id="contentTheme" class="tab-content flex flex-col gap-3">
-          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose Photobooth Theme</label>
-          <div class="grid grid-cols-2 gap-2.5">
-            <button onclick="applyTheme('theme-minimal')" class="theme-btn active-theme p-3 rounded-2xl bg-slate-800 border-2 border-indigo-500 text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
-              <span class="text-xs font-semibold text-slate-200">Aesthetic Minimal</span>
-              <span class="text-[10px] text-slate-400 font-serif italic">Soft pastel & serif</span>
-            </button>
-            <button onclick="applyTheme('theme-birthday')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
-              <span class="text-xs font-semibold text-rose-400">Birthday Party 🎉</span>
-              <span class="text-[10px] text-slate-400">Festive balloons</span>
-            </button>
-            <button onclick="applyTheme('theme-grad')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
-              <span class="text-xs font-semibold text-amber-400">Graduation Day 🎓</span>
-              <span class="text-[10px] text-slate-400">Gold & Classy Dark</span>
-            </button>
-            <button onclick="applyTheme('theme-retro')" class="theme-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-20 transition hover:bg-slate-750">
-              <span class="text-xs font-semibold text-cyan-400">Y2K Retro 90s 👾</span>
-              <span class="text-[10px] text-slate-400">Pixel & Neon Vibez</span>
-            </button>
-            <button onclick="applyTheme('theme-kawaii')" class="theme-btn col-span-2 p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-left flex flex-col justify-between h-16 transition hover:bg-slate-750">
-              <span class="text-xs font-semibold text-pink-300">Anime / Kawaii Cute ✨</span>
-              <span class="text-[10px] text-slate-400">Pink pastel & cute sparkles</span>
-            </button>
-          </div>
+        <!-- Theme Selection -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Tema Bingkai</label>
+          <select id="themeSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="minimalist">Minimalist</option>
+            <option value="birthday">Birthday Party</option>
+            <option value="graduation">Graduation Day</option>
+            <option value="retro">Y2K Retro</option>
+            <option value="anime">Kawaii Anime</option>
+          </select>
         </div>
 
-        <!-- TAB CONTENT 2: Layout & Format -->
-        <div id="contentLayout" class="tab-content hidden flex-col gap-3">
-          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Strip Format & Size</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="setLayout('strip-3')" class="layout-btn p-3 rounded-2xl bg-slate-800 border-2 border-indigo-500 text-center flex flex-col items-center gap-2 transition">
-              <div class="w-5 h-10 bg-slate-700 rounded flex flex-col gap-0.5 p-0.5">
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-              </div>
-              <span class="text-[10px] font-medium text-slate-200">3-Strip</span>
-            </button>
-            <button onclick="setLayout('strip-4')" class="layout-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 transition">
-              <div class="w-5 h-10 bg-slate-700 rounded flex flex-col gap-0.5 p-0.5">
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-                <div class="flex-1 bg-slate-500 rounded-sm"></div>
-              </div>
-              <span class="text-[10px] font-medium text-slate-200">4-Strip</span>
-            </button>
-            <button onclick="setLayout('quad-4')" class="layout-btn p-3 rounded-2xl bg-slate-800 border-2 border-transparent text-center flex flex-col items-center gap-2 transition">
-              <div class="w-8 h-8 bg-slate-700 rounded grid grid-cols-2 gap-0.5 p-0.5">
-                <div class="bg-slate-500 rounded-sm"></div>
-                <div class="bg-slate-500 rounded-sm"></div>
-                <div class="bg-slate-500 rounded-sm"></div>
-                <div class="bg-slate-500 rounded-sm"></div>
-              </div>
-              <span class="text-[10px] font-medium text-slate-200">2x2 Quad</span>
-            </button>
-          </div>
+        <!-- Filter Selection -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Filter Foto</label>
+          <select id="filterSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="none">Normal</option>
+            <option value="grayscale(100%)">Hitam-Putih</option>
+            <option value="sepia(80%)">Vintage Sepia</option>
+            <option value="contrast(120%) saturation(130%)">Vivid Color</option>
+            <option value="brightness(110%) contrast(90%)">Soft Pastel</option>
+          </select>
         </div>
-
-        <!-- TAB CONTENT 3: Custom Text Label -->
-        <div id="contentText" class="tab-content hidden flex-col gap-3">
-          <label for="txtCaption" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Custom Header / Watermark Text</label>
-          <input type="text" id="txtCaption" value="SNAP! STUDIO" placeholder="Write caption here..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-          <div class="flex items-center justify-between pt-2">
-            <span class="text-xs text-slate-400 font-medium">Show Today's Date</span>
-            <input type="checkbox" id="chkShowDate" checked class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-          </div>
-        </div>
-
       </div>
 
-      <!-- PREVIEW & LIVE MOTION STRIP DISPLAY -->
-      <div class="flex flex-col items-center bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-slate-800/80 shadow-xl overflow-hidden relative">
-        <div class="flex justify-between items-center w-full mb-3">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Live Strip Preview</span>
-            <span class="text-[10px] text-slate-500">(Hover photo to play motion)</span>
-          </div>
-          <span id="themeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">MINIMAL</span>
-        </div>
-
-        <!-- Interactive Frame Container with Live Motion Overlay -->
-        <div class="relative w-full flex justify-center py-2 overflow-x-auto" id="previewCanvasWrapper">
-          <canvas id="previewCanvas" class="max-h-[380px] w-auto rounded-2xl shadow-2xl transition-all duration-300 border border-black/20"></canvas>
-          <!-- Interactive Live Photo Player Overlay Elements (rendered dynamically) -->
-          <div id="liveMotionOverlay" class="absolute inset-0 pointer-events-none flex justify-center items-center"></div>
-        </div>
-
-        <!-- Live Photo Motion Clips Selector Panel -->
-        <div id="liveClipsPanel" class="w-full hidden flex-col gap-2 mt-3 pt-3 border-t border-slate-800">
-          <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1">
-            <i data-lucide="video" class="w-3.5 h-3.5"></i>
-            <span>Captured Live Clips</span>
-          </span>
-          <div id="liveClipsList" class="flex gap-2 overflow-x-auto pb-1"></div>
-        </div>
-
-        <!-- Action Control Buttons -->
-        <div class="w-full grid grid-cols-3 gap-2 mt-4">
-          <button id="btnDownloadPNG" class="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-xs tracking-wider transition active:scale-95 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5">
-            <i data-lucide="download" class="w-4 h-4"></i>
-            <span>PNG STRIP</span>
-          </button>
-          
-          <button id="btnOpenQR" class="py-2.5 px-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-xs tracking-wider transition active:scale-95 text-white shadow-lg shadow-purple-600/30 flex items-center justify-center gap-1.5">
-            <i data-lucide="qr-code" class="w-4 h-4"></i>
-            <span>QR CODE</span>
-          </button>
-
-          <button id="btnPrintJob" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold text-xs transition active:scale-95 text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5">
-            <i data-lucide="printer" class="w-4 h-4"></i>
-            <span>PRINT</span>
-          </button>
-        </div>
-
+      <!-- Photo Canvas Output Area (Printable) -->
+      <div id="printableArea" class="flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-inner overflow-auto max-h-[500px]">
+        <canvas id="stripCanvas" class="max-h-[460px] w-auto h-auto rounded shadow-xl border border-white/10"></canvas>
       </div>
 
-    </section>
+      <!-- Output Export Actions -->
+      <div class="grid grid-cols-3 gap-2">
+        <button id="btnDownloadImage" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow">
+          <span>💾</span> Unduh PNG
+        </button>
+        <button id="btnPrint" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 px-3 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5">
+          <span>🖨️</span> Print Cetak
+        </button>
+        <button id="btnQRCode" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 px-3 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5">
+          <span>📱</span> QR Code
+        </button>
+      </div>
+
+      <!-- QR Code Modal Overlay -->
+      <div id="qrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 text-center">
+          <h3 class="text-base font-bold text-white">Scan QR Code Foto Anda</h3>
+          <p class="text-xs text-slate-400">Pindai kode QR ini menggunakan kamera HP untuk mengunduh hasil foto langsung ke galeri Anda.</p>
+          <div id="qrcode" class="p-3 bg-white rounded-2xl shadow-lg"></div>
+          <button id="btnCloseQR" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">Tutup</button>
+        </div>
+      </div>
+
+    </div>
 
   </main>
 
-  <!-- PRINT CONTAINER (PRINT MEDIA ONLY) -->
-  <div id="printContainer" class="hidden no-display-screen">
-    <canvas id="printAreaCanvas"></canvas>
-  </div>
-
-  <!-- QR CODE MODAL DIALOG -->
-  <div id="qrModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 no-print">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 text-center shadow-2xl relative">
-      <button id="btnCloseQR" class="absolute top-4 right-4 p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
-
-      <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-        <i data-lucide="qr-code" class="w-6 h-6"></i>
-      </div>
-
-      <div>
-        <h3 class="text-base font-bold text-white">Scan & Download to Mobile</h3>
-        <p class="text-xs text-slate-400 mt-1">Scan this QR code with your smartphone camera to access and download your photo strip.</p>
-      </div>
-
-      <!-- QR Code Container -->
-      <div id="qrcodeBox" class="p-3 bg-white rounded-2xl border border-slate-200 my-2 shadow-inner"></div>
-
-      <div class="w-full flex flex-col gap-2">
-        <button id="btnCopyQRLink" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-xs transition text-white flex items-center justify-center gap-2">
-          <i data-lucide="copy" class="w-4 h-4"></i>
-          <span>Copy Data Link</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-800/80 bg-slate-950 no-print">
-    &copy; 2026 SNAP! PhotoBox Studio &bull; All Rights Reserved.
+  <footer class="p-4 border-t border-slate-800/80 text-center text-xs text-slate-500 bg-slate-950">
+    &copy; 2026 SNAP! PhotoBox Studio &bull; Developed with Modular JS Architecture
   </footer>
 
+  <!-- ==========================================
+       MODULAR JAVASCRIPT ARCHITECTURE
+       ========================================== -->
   <script>
-    /* ==========================================================================
-       1. STATE MANAGEMENT & SYSTEM CONFIGURATION
-       ========================================================================== */
+    /* ------------------------------------------
+       1. STATE MANAGEMENT & CONFIGURATION
+       ------------------------------------------ */
     const CONFIG = {
-      photoWidth: 800,
-      photoHeight: 600,
-      padding: 40,
-      gap: 30,
-      footerHeight: 120,
-      liveRecordDurationMs: 2200 // Live photo recording length in ms
+      photoWidth: 600,
+      photoHeight: 450,
+      padding: 24,
+      countdownSeconds: 3,
+      liveClipDurationMs: 1800
+    };
+
+    const LAYOUT_CONFIGS = {
+      strip3: { name: '3-Photo Strip', count: 3, cols: 1, type: 'strip' },
+      strip4: { name: '4-Photo Strip', count: 4, cols: 1, type: 'strip' },
+      grid2x2: { name: '2x2 Quad Grid', count: 4, cols: 2, type: 'grid' },
+      polaroid: { name: 'Single Polaroid', count: 1, cols: 1, type: 'polaroid' }
+    };
+
+    const THEMES = {
+      minimalist: { name: 'Minimalist', bg: '#0f172a', text: '#f8fafc', accent: '#6366f1', font: 'sans-serif', label: 'SNAP! STUDIO' },
+      birthday: { name: 'Birthday Party', bg: '#f43f5e', text: '#ffffff', accent: '#fde047', font: 'cursive', label: 'HAPPY BIRTHDAY! 🎂' },
+      graduation: { name: 'Graduation Day', bg: '#1e3a8a', text: '#ffffff', accent: '#fbbf24', font: 'serif', label: 'HAPPY GRADUATION 🎓' },
+      retro: { name: 'Y2K Retro', bg: '#ec4899', text: '#a5f3fc', accent: '#facc15', font: 'monospace', label: 'Y2K MEMORIES ★' },
+      anime: { name: 'Kawaii Anime', bg: '#f472b6', text: '#ffffff', accent: '#38bdf8', font: 'sans-serif', label: 'KAWAII SNAP ✨' }
     };
 
     let state = {
-      photos: [],             // Array of captured static photo Data URLs
-      liveClips: [],          // Array of WebM Blob URLs for Live Motion Clips
-      currentLayout: 'strip-3',// 'strip-3', 'strip-4', 'quad-4'
-      currentFilter: 'filter-normal',
-      currentTheme: 'theme-minimal',
-      countdownTime: 3,
-      isLivePhotoEnabled: true,
-      isMirror: true,
-      soundEnabled: true,
-      customCaption: 'SNAP! STUDIO',
-      showDate: true
+      currentLayout: 'strip3',
+      currentTheme: 'minimalist',
+      currentFilter: 'none',
+      capturedPhotos: [], // Array of canvas photo elements
+      liveClips: [],      // Array of Recorded WebM Blobs
+      combinedReelBlob: null,
+      isSessionRunning: false
     };
 
     const DOM = {
-      webcam: document.getElementById('webcam'),
-      btnStartCapture: document.getElementById('btnStartCapture'),
-      btnNewSession: document.getElementById('btnNewSession'),
-      btnToggleMirror: document.getElementById('btnToggleMirror'),
-      btnSoundToggle: document.getElementById('btnSoundToggle'),
+      video: document.getElementById('webcam'),
+      btnStartSession: document.getElementById('btnStartSession'),
+      btnReset: document.getElementById('btnReset'),
+      btnDownloadImage: document.getElementById('btnDownloadImage'),
+      btnPrint: document.getElementById('btnPrint'),
+      btnQRCode: document.getElementById('btnQRCode'),
+      btnDownloadVideoReel: document.getElementById('btnDownloadVideoReel'),
+      layoutSelect: document.getElementById('layoutSelect'),
+      themeSelect: document.getElementById('themeSelect'),
+      filterSelect: document.getElementById('filterSelect'),
+      stripCanvas: document.getElementById('stripCanvas'),
       countdownOverlay: document.getElementById('countdownOverlay'),
       countdownText: document.getElementById('countdownText'),
-      countdownSubtext: document.getElementById('countdownSubtext'),
-      recordingIndicator: document.getElementById('recordingIndicator'),
-      photoCounterText: document.getElementById('photoCounterText'),
+      captureStatusText: document.getElementById('captureStatusText'),
       flashOverlay: document.getElementById('flashOverlay'),
-      previewCanvas: document.getElementById('previewCanvas'),
-      previewCanvasWrapper: document.getElementById('previewCanvasWrapper'),
-      printAreaCanvas: document.getElementById('printAreaCanvas'),
-      themeBadge: document.getElementById('themeBadge'),
-      txtCaption: document.getElementById('txtCaption'),
-      chkShowDate: document.getElementById('chkShowDate'),
-      chkLivePhoto: document.getElementById('chkLivePhoto'),
-      liveClipsPanel: document.getElementById('liveClipsPanel'),
-      liveClipsList: document.getElementById('liveClipsList'),
+      currentLayoutBadge: document.getElementById('currentLayoutBadge'),
+      combinedReelVideo: document.getElementById('combinedReelVideo'),
+      reelPlaceholder: document.getElementById('reelPlaceholder'),
+      reelStatusBadge: document.getElementById('reelStatusBadge'),
       qrModal: document.getElementById('qrModal'),
-      qrcodeBox: document.getElementById('qrcodeBox'),
-      btnCloseQR: document.getElementById('btnCloseQR'),
-      btnCopyQRLink: document.getElementById('btnCopyQRLink'),
-      btnDownloadPNG: document.getElementById('btnDownloadPNG'),
-      btnOpenQR: document.getElementById('btnOpenQR'),
-      btnPrintJob: document.getElementById('btnPrintJob')
+      qrcodeContainer: document.getElementById('qrcode'),
+      btnCloseQR: document.getElementById('btnCloseQR')
     };
 
-    let mediaStream = null;
-    let activeMediaRecorder = null;
-    let recordedChunks = [];
-
-    /* ==========================================================================
-       2. CAMERA & AUDIO MODULE
-       ========================================================================== */
+    /* ------------------------------------------
+       2. MEDIA & CAMERA MODULE
+       ------------------------------------------ */
     async function initCamera() {
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' },
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: "user" },
           audio: false
         });
-        DOM.webcam.srcObject = mediaStream;
+        DOM.video.srcObject = stream;
       } catch (err) {
-        alert('Camera Access Error: Please ensure webcam permissions are enabled.');
-        console.error('Webcam Init Failure:', err);
+        alert("Gagal mengkoneksikan ke webcam. Mohon periksa izin kamera pada browser Anda.");
+        console.error("Camera Error:", err);
       }
     }
 
     function playShutterSound() {
-      if (!state.soundEnabled) return;
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const bufferSize = audioCtx.sampleRate * 0.08;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 1000;
-
+        const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-
-        noise.connect(filter);
-        filter.connect(gain);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.09);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.09);
+        osc.connect(gain);
         gain.connect(audioCtx.destination);
-
-        noise.start();
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.09);
       } catch (e) {
-        console.warn('Audio Context Error:', e);
+        console.log("Audio not allowed yet");
       }
     }
 
-    function triggerFlashEffect() {
+    function triggerFlash() {
       DOM.flashOverlay.style.opacity = '1';
-      DOM.flashOverlay.classList.add('shutter-flash');
-      setTimeout(() => {
-        DOM.flashOverlay.classList.remove('shutter-flash');
-        DOM.flashOverlay.style.opacity = '0';
-      }, 350);
+      setTimeout(() => DOM.flashOverlay.style.opacity = '0', 150);
     }
 
-    /* ==========================================================================
-       3. LIVE PHOTO RECORDING ENGINE (MediaRecorder API)
-       ========================================================================== */
-    function recordLivePhotoClip() {
+    /* ------------------------------------------
+       3. CAPTURE & LIVE VIDEO CLIP MODULE
+       ------------------------------------------ */
+    function recordLiveClip(stream, durationMs) {
       return new Promise((resolve) => {
-        if (!state.isLivePhotoEnabled || !mediaStream) {
-          resolve(null);
-          return;
-        }
+        const chunks = [];
+        let mediaRecorder;
 
-        recordedChunks = [];
         try {
-          const options = { mimeType: 'video/webm;codecs=vp8' };
-          activeMediaRecorder = new MediaRecorder(mediaStream, MediaRecorder.isTypeSupported(options.mimeType) ? options : undefined);
-
-          activeMediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-          };
-
-          activeMediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const videoUrl = URL.createObjectURL(blob);
-            resolve(videoUrl);
-          };
-
-          activeMediaRecorder.start(100);
-          
-          // Show Recording Badge in UI
-          DOM.recordingIndicator.classList.remove('hidden');
-          DOM.recordingIndicator.classList.add('flex');
-
-          // Stop recording after designated live duration
-          setTimeout(() => {
-            if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
-              activeMediaRecorder.stop();
-            }
-            DOM.recordingIndicator.classList.remove('flex');
-            DOM.recordingIndicator.classList.add('hidden');
-          }, CONFIG.liveRecordDurationMs);
-
-        } catch (err) {
-          console.warn('MediaRecorder error or unsupported:', err);
-          resolve(null);
+          mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        } catch (e) {
+          mediaRecorder = new MediaRecorder(stream);
         }
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          resolve(blob);
+        };
+
+        mediaRecorder.start();
+        setTimeout(() => {
+          if (mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        }, durationMs);
       });
     }
 
-    /* ==========================================================================
-       4. PHOTO CAPTURE & TIMER SEQUENCER
-       ========================================================================== */
-    function getMaxPhotos() {
-      return (state.currentLayout === 'strip-3') ? 3 : 4;
-    }
-
-    function runCaptureSequence() {
-      const max = getMaxPhotos();
-      if (state.photos.length >= max) {
-        alert(`Session complete (${max}/${max} photos). Click 'New Session' to restart.`);
-        return;
-      }
-
-      DOM.btnStartCapture.disabled = true;
-      DOM.btnStartCapture.classList.add('opacity-50', 'pointer-events-none');
-
-      async function nextShot() {
-        if (state.photos.length >= max) {
-          DOM.btnStartCapture.disabled = false;
-          DOM.btnStartCapture.classList.remove('opacity-50', 'pointer-events-none');
-          return;
-        }
-
-        DOM.countdownOverlay.classList.remove('hidden');
-        DOM.countdownOverlay.classList.add('flex');
-        let counter = state.countdownTime;
-        DOM.countdownText.innerText = counter;
-        DOM.countdownSubtext.innerText = state.isLivePhotoEnabled ? "Hold position for Live Motion!" : "Strike a Pose!";
-
-        const timerInterval = setInterval(async () => {
-          counter--;
-          if (counter > 0) {
-            DOM.countdownText.innerText = counter;
-          } else {
-            clearInterval(timerInterval);
-
-            // Start Live Recording concurrently with shutter snap
-            const liveRecordingPromise = recordLivePhotoClip();
-
-            triggerFlashEffect();
-            playShutterSound();
-            captureSingleFrame();
-
-            // Wait for Live Video clip chunk if enabled
-            const liveClipUrl = await liveRecordingPromise;
-            if (liveClipUrl) {
-              state.liveClips.push(liveClipUrl);
-            } else {
-              state.liveClips.push(null);
-            }
-
-            DOM.countdownOverlay.classList.remove('flex');
-            DOM.countdownOverlay.classList.add('hidden');
-
-            renderPhotoStrip();
-
-            if (state.photos.length < max) {
-              setTimeout(nextShot, 1200);
-            } else {
-              DOM.btnStartCapture.disabled = false;
-              DOM.btnStartCapture.classList.remove('opacity-50', 'pointer-events-none');
-            }
-          }
-        }, 1000);
-      }
-
-      nextShot();
-    }
-
-    function captureSingleFrame() {
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = DOM.webcam.videoWidth || 640;
-      tempCanvas.height = DOM.webcam.videoHeight || 480;
-      const ctx = tempCanvas.getContext('2d');
-
-      if (state.isMirror) {
-        ctx.translate(tempCanvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-
-      // Apply CSS Filters directly to canvas export
-      if (state.currentFilter === 'filter-bw') ctx.filter = 'grayscale(100%) contrast(110%)';
-      else if (state.currentFilter === 'filter-sepia') ctx.filter = 'sepia(85%) contrast(105%)';
-      else if (state.currentFilter === 'filter-vintage') ctx.filter = 'contrast(115%) brightness(105%) sepia(35%)';
-      else if (state.currentFilter === 'filter-warm') ctx.filter = 'sepia(25%) saturate(150%)';
-      else if (state.currentFilter === 'filter-soft') ctx.filter = 'brightness(115%) contrast(90%)';
-
-      ctx.drawImage(DOM.webcam, 0, 0, tempCanvas.width, tempCanvas.height);
-      state.photos.push(tempCanvas.toDataURL('image/png'));
-    }
-
-    /* ==========================================================================
-       5. THEMES & CANVAS STRIP BUILDER
-       ========================================================================== */
-    const THEME_PRESETS = {
-      'theme-minimal': {
-        name: 'MINIMAL',
-        bg: '#1e293b',
-        textColor: '#f8fafc',
-        subTextColor: '#94a3b8',
-        font: 'bold 34px "Space Grotesk", sans-serif',
-        deco: 'none'
-      },
-      'theme-birthday': {
-        name: 'BIRTHDAY',
-        bg: '#fff1f2',
-        textColor: '#e11d48',
-        subTextColor: '#f43f5e',
-        font: 'bold 36px "Fredoka", cursive',
-        deco: 'balloons'
-      },
-      'theme-grad': {
-        name: 'GRADUATION',
-        bg: '#0f172a',
-        textColor: '#fbbf24',
-        subTextColor: '#d97706',
-        font: 'bold 36px "Playfair Display", serif',
-        deco: 'gold-border'
-      },
-      'theme-retro': {
-        name: 'RETRO Y2K',
-        bg: '#06b6d4',
-        textColor: '#facc15',
-        subTextColor: '#ffffff',
-        font: '24px "Press Start 2P", monospace',
-        deco: 'pixels'
-      },
-      'theme-kawaii': {
-        name: 'KAWAII',
-        bg: '#fce7f3',
-        textColor: '#ec4899',
-        subTextColor: '#f472b6',
-        font: 'bold 36px "Fredoka", cursive',
-        deco: 'sparkles'
-      }
-    };
-
-    function renderPhotoStrip(targetCanvas = DOM.previewCanvas) {
-      const max = getMaxPhotos();
-      DOM.photoCounterText.innerText = `${state.photos.length} / ${max} SHOTS`;
-
-      const theme = THEME_PRESETS[state.currentTheme];
-      DOM.themeBadge.innerText = theme.name;
-
-      const canvas = targetCanvas;
+    function capturePhotoFrame() {
+      const canvas = document.createElement('canvas');
+      canvas.width = CONFIG.photoWidth;
+      canvas.height = CONFIG.photoHeight;
       const ctx = canvas.getContext('2d');
 
-      const photoW = CONFIG.photoWidth;
-      const photoH = CONFIG.photoHeight;
-      const pad = CONFIG.padding;
-      const gap = CONFIG.gap;
-      const footerH = CONFIG.footerHeight;
+      // Horizontal Mirror Effect & Apply Filter
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.filter = state.currentFilter;
+      ctx.drawImage(DOM.video, 0, 0, canvas.width, canvas.height);
 
-      // Calculate Total Canvas Size based on Layout Mode
-      if (state.currentLayout === 'quad-4') {
-        const rows = Math.ceil(max / 2);
-        canvas.width = (photoW * 2) + gap + (pad * 2);
-        canvas.height = (photoH * rows) + (gap * (rows - 1)) + (pad * 2) + footerH;
-      } else {
-        canvas.width = photoW + (pad * 2);
-        canvas.height = (photoH * max) + (gap * (max - 1)) + (pad * 2) + footerH;
-      }
+      triggerFlash();
+      playShutterSound();
 
-      // Fill Frame Background Color
-      ctx.fillStyle = theme.bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Render Decorative Theme Overlays
-      drawThemeDecorations(ctx, canvas, theme);
-
-      // Render Captured Photos or Empty Placeholders
-      let loadedImages = 0;
-      for (let i = 0; i < max; i++) {
-        let x, y;
-        if (state.currentLayout === 'quad-4') {
-          const col = i % 2;
-          const row = Math.floor(i / 2);
-          x = pad + col * (photoW + gap);
-          y = pad + row * (photoH + gap);
-        } else {
-          x = pad;
-          y = pad + i * (photoH + gap);
-        }
-
-        if (state.photos[i]) {
-          const img = new Image();
-          img.onload = () => {
-            ctx.save();
-            ctx.beginPath();
-            ctx.roundRect(x, y, photoW, photoH, 20);
-            ctx.clip();
-            ctx.drawImage(img, x, y, photoW, photoH);
-            ctx.restore();
-
-            loadedImages++;
-            if (loadedImages === state.photos.length) {
-              renderStripFooterText(ctx, canvas, theme);
-              updateLiveClipsUI();
-            }
-          };
-          img.src = state.photos[i];
-        } else {
-          // Placeholder Box
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(x, y, photoW, photoH, 20);
-          ctx.fillStyle = 'rgba(0,0,0,0.12)';
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          ctx.fillStyle = theme.subTextColor;
-          ctx.font = 'bold 28px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(`Frame ${i + 1}`, x + (photoW / 2), y + (photoH / 2));
-          ctx.restore();
-        }
-      }
-
-      if (state.photos.length === 0) {
-        renderStripFooterText(ctx, canvas, theme);
-        updateLiveClipsUI();
-      }
+      return canvas;
     }
 
-    function drawThemeDecorations(ctx, canvas, theme) {
-      if (theme.deco === 'gold-border') {
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 12;
-        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-      } else if (theme.deco === 'sparkles') {
-        ctx.fillStyle = '#f472b6';
-        ctx.font = '32px sans-serif';
-        ctx.fillText('✨', 20, 40);
-        ctx.fillText('🌸', canvas.width - 50, 40);
-        ctx.fillText('✨', canvas.width - 40, canvas.height - 40);
-      } else if (theme.deco === 'balloons') {
-        ctx.font = '36px sans-serif';
-        ctx.fillText('🎈', 20, 50);
-        ctx.fillText('🎉', canvas.width - 60, 50);
-      } else if (theme.deco === 'pixels') {
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 8;
-        ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
-      }
+    function runTimerCountdown(seconds, statusText) {
+      return new Promise((resolve) => {
+        DOM.countdownOverlay.classList.remove('hidden');
+        DOM.captureStatusText.innerText = statusText;
+        let count = seconds;
+        DOM.countdownText.innerText = count;
+
+        const interval = setInterval(() => {
+          count--;
+          if (count > 0) {
+            DOM.countdownText.innerText = count;
+          } else {
+            clearInterval(interval);
+            DOM.countdownOverlay.classList.add('hidden');
+            resolve();
+          }
+        }, 1000);
+      });
     }
 
-    function renderStripFooterText(ctx, canvas, theme) {
-      const footerY = canvas.height - (CONFIG.footerHeight / 2);
-      
-      ctx.fillStyle = theme.textColor;
-      ctx.font = theme.font;
-      ctx.textAlign = 'center';
-      
-      const captionText = state.customCaption.trim() || 'SNAP! STUDIO';
-      ctx.fillText(captionText.toUpperCase(), canvas.width / 2, footerY);
-
-      if (state.showDate) {
-        const today = new Date();
-        const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-        ctx.font = '20px monospace';
-        ctx.fillStyle = theme.subTextColor;
-        ctx.fillText(dateStr, canvas.width / 2, footerY + 35);
-      }
-    }
-
-    /* ==========================================================================
-       6. LIVE MOTION PLAYBACK & CLIPS LIST UI
-       ========================================================================== */
-    function updateLiveClipsUI() {
-      DOM.liveClipsList.innerHTML = '';
-      const hasClips = state.liveClips.some(c => c !== null);
-
-      if (!hasClips) {
-        DOM.liveClipsPanel.classList.add('hidden');
-        DOM.liveClipsPanel.classList.remove('flex');
+    async function startPhotoSession() {
+      const layoutInfo = LAYOUT_CONFIGS[state.currentLayout];
+      if (state.capturedPhotos.length >= layoutInfo.count) {
+        alert("Sesi foto telah lengkap! Klik Reset jika ingin mengambil ulang.");
         return;
       }
 
-      DOM.liveClipsPanel.classList.remove('hidden');
-      DOM.liveClipsPanel.classList.add('flex');
+      state.isSessionRunning = true;
+      DOM.btnStartSession.disabled = true;
+      DOM.btnStartSession.classList.add('opacity-50', 'cursor-not-allowed');
 
-      state.liveClips.forEach((url, idx) => {
-        if (!url) return;
-        const item = document.createElement('div');
-        item.className = 'flex items-center gap-2 p-2 bg-slate-950 rounded-xl border border-slate-800 shrink-0 text-xs';
+      const stream = DOM.video.srcObject;
+
+      for (let i = state.capturedPhotos.length; i < layoutInfo.count; i++) {
+        // Run timer
+        await runTimerCountdown(CONFIG.countdownSeconds, `Mengambil Foto ${i + 1} dari ${layoutInfo.count}`);
         
-        item.innerHTML = `
-          <div class="flex items-center gap-1.5 font-medium text-slate-200">
-            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            <span>Live #${idx + 1}</span>
-          </div>
-          <button onclick="downloadLiveClip('${url}', ${idx})" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Download Live Motion Clip">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          </button>
-        `;
-        DOM.liveClipsList.appendChild(item);
-      });
+        // Parallel: Start Live Clip Recording & Capture Still Image
+        const recordingPromise = recordLiveClip(stream, CONFIG.liveClipDurationMs);
+        const photoCanvas = capturePhotoFrame();
+        
+        state.capturedPhotos.push(photoCanvas);
+        renderPhotoStrip();
 
-      lucide.createIcons();
+        const videoBlob = await recordingPromise;
+        state.liveClips.push(videoBlob);
+      }
+
+      // After capturing all photos, stitch clips into a single Combined Reel
+      await stitchClipsIntoCombinedReel();
+
+      state.isSessionRunning = false;
+      DOM.btnStartSession.disabled = false;
+      DOM.btnStartSession.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 
-    function downloadLiveClip(url, index) {
+    /* ------------------------------------------
+       4. VIDEO REEL STITCHER MODULE
+       ------------------------------------------ */
+    async function stitchClipsIntoCombinedReel() {
+      if (state.liveClips.length === 0) return;
+
+      DOM.reelStatusBadge.innerText = "Menggabungkan Video...";
+      DOM.reelStatusBadge.className = "text-[10px] text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20";
+
+      const canvas = document.createElement('canvas');
+      canvas.width = CONFIG.photoWidth;
+      canvas.height = CONFIG.photoHeight;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      let mediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      const chunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      const recorderStopped = new Promise((resolve) => {
+        mediaRecorder.onstop = () => {
+          state.combinedReelBlob = new Blob(chunks, { type: 'video/webm' });
+          resolve();
+        };
+      });
+
+      mediaRecorder.start();
+
+      // Play each recorded WebM clip sequentially on canvas
+      for (let i = 0; i < state.liveClips.length; i++) {
+        const videoUrl = URL.createObjectURL(state.liveClips[i]);
+        const tempVideo = document.createElement('video');
+        tempVideo.src = videoUrl;
+        tempVideo.muted = true;
+        tempVideo.playsInline = true;
+
+        await new Promise((resolveVideo) => {
+          tempVideo.onloadedmetadata = () => {
+            tempVideo.play();
+            function drawFrame() {
+              if (!tempVideo.paused && !tempVideo.ended) {
+                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                requestAnimationFrame(drawFrame);
+              } else {
+                resolveVideo();
+              }
+            }
+            drawFrame();
+          };
+        });
+        URL.revokeObjectURL(videoUrl);
+      }
+
+      mediaRecorder.stop();
+      await recorderStopped;
+
+      // Update Combined Reel Video Element UI
+      const combinedUrl = URL.createObjectURL(state.combinedReelBlob);
+      DOM.combinedReelVideo.src = combinedUrl;
+      DOM.combinedReelVideo.classList.remove('hidden');
+      DOM.reelPlaceholder.classList.add('hidden');
+
+      DOM.btnDownloadVideoReel.disabled = false;
+      DOM.btnDownloadVideoReel.classList.remove('opacity-50', 'cursor-not-allowed');
+      DOM.btnDownloadVideoReel.classList.add('hover:bg-indigo-600', 'bg-indigo-700', 'text-white');
+
+      DOM.reelStatusBadge.innerText = "Reel Ready";
+      DOM.reelStatusBadge.className = "text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20";
+    }
+
+    /* ------------------------------------------
+       5. CANVAS RENDERER MODULE (STRIP & GRID)
+       ------------------------------------------ */
+    function renderPhotoStrip() {
+      const layout = LAYOUT_CONFIGS[state.currentLayout];
+      const theme = THEMES[state.currentTheme];
+
+      const canvas = DOM.stripCanvas;
+      const ctx = canvas.getContext('2d');
+
+      let totalWidth, totalHeight;
+
+      // Determine dimensions based on layout type
+      if (layout.type === 'strip') {
+        totalWidth = CONFIG.photoWidth + (CONFIG.padding * 2);
+        totalHeight = (CONFIG.photoHeight * layout.count) + (CONFIG.padding * (layout.count + 1)) + 80;
+      } else if (layout.type === 'grid') { // 2x2 Grid
+        totalWidth = (CONFIG.photoWidth * 2) + (CONFIG.padding * 3);
+        totalHeight = (CONFIG.photoHeight * 2) + (CONFIG.padding * 3) + 90;
+      } else if (layout.type === 'polaroid') { // Polaroid
+        totalWidth = CONFIG.photoWidth + (CONFIG.padding * 2);
+        totalHeight = CONFIG.photoHeight + (CONFIG.padding * 2) + 160;
+      }
+
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+
+      // Draw Theme Background Frame
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+      // Render Photo Slots
+      for (let i = 0; i < layout.count; i++) {
+        let xPos, yPos;
+
+        if (layout.type === 'strip' || layout.type === 'polaroid') {
+          xPos = CONFIG.padding;
+          yPos = CONFIG.padding + i * (CONFIG.photoHeight + CONFIG.padding);
+        } else if (layout.type === 'grid') {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          xPos = CONFIG.padding + col * (CONFIG.photoWidth + CONFIG.padding);
+          yPos = CONFIG.padding + row * (CONFIG.photoHeight + CONFIG.padding);
+        }
+
+        if (state.capturedPhotos[i]) {
+          ctx.drawImage(state.capturedPhotos[i], xPos, yPos);
+        } else {
+          // Placeholder Frame Box
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.fillRect(xPos, yPos, CONFIG.photoWidth, CONFIG.photoHeight);
+          ctx.fillStyle = theme.text;
+          ctx.font = `20px ${theme.font}`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`Slot Foto ${i + 1}`, xPos + (CONFIG.photoWidth / 2), yPos + (CONFIG.photoHeight / 2));
+        }
+      }
+
+      // Render Branding Label & Date Stamp
+      ctx.fillStyle = theme.text;
+      ctx.font = `bold 26px ${theme.font}`;
+      ctx.textAlign = 'center';
+      
+      const labelY = totalHeight - (layout.type === 'polaroid' ? 70 : 40);
+      ctx.fillText(theme.label, totalWidth / 2, labelY);
+
+      // Date Stamp
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+      ctx.fillStyle = theme.accent;
+      ctx.font = `14px ${theme.font}`;
+      ctx.fillText(dateStr, totalWidth / 2, labelY + 25);
+    }
+
+    /* ------------------------------------------
+       6. EXPORT, PRINT & UTILITY MODULE
+       ------------------------------------------ */
+    function resetSession() {
+      state.capturedPhotos = [];
+      state.liveClips = [];
+      state.combinedReelBlob = null;
+
+      DOM.combinedReelVideo.src = "";
+      DOM.combinedReelVideo.classList.add('hidden');
+      DOM.reelPlaceholder.classList.remove('hidden');
+
+      DOM.btnDownloadVideoReel.disabled = true;
+      DOM.btnDownloadVideoReel.className = "w-full bg-slate-800 opacity-50 cursor-not-allowed hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2";
+
+      DOM.reelStatusBadge.innerText = "Belum Terekam";
+      DOM.reelStatusBadge.className = "text-[10px] text-slate-500 bg-slate-800 px-2.5 py-0.5 rounded-full";
+
+      renderPhotoStrip();
+    }
+
+    function downloadPNGImage() {
+      if (state.capturedPhotos.length === 0) {
+        alert("Belum ada foto yang diambil!");
+        return;
+      }
       const link = document.createElement('a');
-      link.download = `live-photo-clip-${index + 1}-${Date.now()}.webm`;
-      link.href = url;
+      link.download = `photobox_${state.currentLayout}_${Date.now()}.png`;
+      link.href = DOM.stripCanvas.toDataURL('image/png');
       link.click();
     }
 
-    /* Hover Live Motion Playback Listener on Preview Canvas */
-    function attachLiveMotionPreviewHover() {
-      const wrapper = DOM.previewCanvasWrapper;
-      let activeVideoElem = null;
-
-      wrapper.addEventListener('mousemove', (e) => {
-        if (state.photos.length === 0 || state.liveClips.length === 0) return;
-
-        const rect = DOM.previewCanvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        if (mouseX < 0 || mouseY < 0 || mouseX > rect.width || mouseY > rect.height) {
-          stopMotionPlayback();
-          return;
-        }
-
-        // Convert DOM coordinates to Canvas coordinates
-        const scaleX = DOM.previewCanvas.width / rect.width;
-        const scaleY = DOM.previewCanvas.height / rect.height;
-
-        const canvasX = mouseX * scaleX;
-        const canvasY = mouseY * scaleY;
-
-        // Determine which photo slot is hovered
-        const hoveredSlot = getHoveredPhotoSlot(canvasX, canvasY);
-
-        if (hoveredSlot !== null && state.liveClips[hoveredSlot]) {
-          playMotionVideoAtSlot(hoveredSlot, rect);
-        } else {
-          stopMotionPlayback();
-        }
-      });
-
-      wrapper.addEventListener('mouseleave', stopMotionPlayback);
-
-      function stopMotionPlayback() {
-        if (activeVideoElem) {
-          activeVideoElem.pause();
-          activeVideoElem.remove();
-          activeVideoElem = null;
-        }
-      }
-
-      function playMotionVideoAtSlot(slotIdx, rect) {
-        if (activeVideoElem && activeVideoElem.dataset.slot === String(slotIdx)) return;
-        stopMotionPlayback();
-
-        const videoUrl = state.liveClips[slotIdx];
-        if (!videoUrl) return;
-
-        const max = getMaxPhotos();
-        const photoW = CONFIG.photoWidth;
-        const photoH = CONFIG.photoHeight;
-        const pad = CONFIG.padding;
-        const gap = CONFIG.gap;
-
-        let slotX, slotY;
-        if (state.currentLayout === 'quad-4') {
-          const col = slotIdx % 2;
-          const row = Math.floor(slotIdx / 2);
-          slotX = pad + col * (photoW + gap);
-          slotY = pad + row * (photoH + gap);
-        } else {
-          slotX = pad;
-          slotY = pad + slotIdx * (photoH + gap);
-        }
-
-        // Map Canvas slot coordinates back to CSS DOM Overlay coordinates
-        const scaleX = rect.width / DOM.previewCanvas.width;
-        const scaleY = rect.height / DOM.previewCanvas.height;
-
-        const domX = (rect.left - wrapper.getBoundingClientRect().left) + (slotX * scaleX);
-        const domY = (rect.top - wrapper.getBoundingClientRect().top) + (slotY * scaleY);
-        const domW = photoW * scaleX;
-        const domH = photoH * scaleY;
-
-        const video = document.createElement('video');
-        video.dataset.slot = String(slotIdx);
-        video.src = videoUrl;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.className = 'absolute rounded-xl object-cover pointer-events-none shadow-2xl z-20 border-2 border-rose-500';
-        video.style.left = `${domX}px`;
-        video.style.top = `${domY}px`;
-        video.style.width = `${domW}px`;
-        video.style.height = `${domH}px`;
-
-        wrapper.appendChild(video);
-        activeVideoElem = video;
-      }
+    function downloadCombinedVideoReel() {
+      if (!state.combinedReelBlob) return;
+      const link = document.createElement('a');
+      link.download = `live_motion_reel_${Date.now()}.webm`;
+      link.href = URL.createObjectURL(state.combinedReelBlob);
+      link.click();
     }
 
-    function getHoveredPhotoSlot(x, y) {
-      const max = getMaxPhotos();
-      const photoW = CONFIG.photoWidth;
-      const photoH = CONFIG.photoHeight;
-      const pad = CONFIG.padding;
-      const gap = CONFIG.gap;
-
-      for (let i = 0; i < max; i++) {
-        let slotX, slotY;
-        if (state.currentLayout === 'quad-4') {
-          const col = i % 2;
-          const row = Math.floor(i / 2);
-          slotX = pad + col * (photoW + gap);
-          slotY = pad + row * (photoH + gap);
-        } else {
-          slotX = pad;
-          slotY = pad + i * (photoH + gap);
-        }
-
-        if (x >= slotX && x <= slotX + photoW && y >= slotY && y <= slotY + photoH) {
-          return i;
-        }
-      }
-      return null;
-    }
-
-    /* ==========================================================================
-       7. PRINT & QR CODE MODULES
-       ========================================================================== */
     function generateQRCode() {
-      if (state.photos.length === 0) {
-        alert('Please capture photos before generating QR Code!');
+      if (state.capturedPhotos.length === 0) {
+        alert("Ambil foto terlebih dahulu sebelum membuat QR Code!");
         return;
       }
-
-      DOM.qrcodeBox.innerHTML = '';
-      const dummyDataUrl = DOM.previewCanvas.toDataURL('image/png');
+      DOM.qrcodeContainer.innerHTML = '';
+      const dummyPhotoUrl = DOM.stripCanvas.toDataURL('image/png');
       
-      // Generate Client-Side QR Code
-      new QRCode(DOM.qrcodeBox, {
-        text: dummyDataUrl.substring(0, 500),
+      new QRCode(DOM.qrcodeContainer, {
+        text: dummyPhotoUrl.substring(0, 500), // Standard QR Data representation
         width: 180,
-        height: 180,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
+        height: 180
       });
 
       DOM.qrModal.classList.remove('hidden');
-      DOM.qrModal.classList.add('flex');
-    }
-
-    function triggerPrintJob() {
-      if (state.photos.length === 0) {
-        alert('Please capture photos before printing!');
-        return;
-      }
-      
-      // Render to print canvas & open print window
-      renderPhotoStrip(DOM.printAreaCanvas);
-      window.print();
-    }
-
-    /* ==========================================================================
-       8. UI CONTROL EVENT HANDLERS
-       ========================================================================== */
-    function applyFilter(filterClass) {
-      state.currentFilter = filterClass;
-      DOM.webcam.className = `w-full h-full object-cover ${state.isMirror ? 'mirror' : ''} ${filterClass} transition-all duration-300`;
-      
-      document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('bg-indigo-600', 'text-white');
-        b.classList.add('bg-slate-800', 'text-slate-300');
-      });
-      event.target.classList.remove('bg-slate-800', 'text-slate-300');
-      event.target.classList.add('bg-indigo-600', 'text-white');
-
-      renderPhotoStrip();
-    }
-
-    function applyTheme(themeClass) {
-      state.currentTheme = themeClass;
-      document.querySelectorAll('.theme-btn').forEach(b => {
-        b.classList.remove('border-indigo-500');
-        b.classList.add('border-transparent');
-      });
-      event.currentTarget.classList.remove('border-transparent');
-      event.currentTarget.classList.add('border-indigo-500');
-
-      renderPhotoStrip();
-    }
-
-    function setLayout(layoutType) {
-      state.currentLayout = layoutType;
-      state.photos = [];
-      state.liveClips = [];
-      document.querySelectorAll('.layout-btn').forEach(b => {
-        b.classList.remove('border-indigo-500');
-        b.classList.add('border-transparent');
-      });
-      event.currentTarget.classList.remove('border-transparent');
-      event.currentTarget.classList.add('border-indigo-500');
-
-      renderPhotoStrip();
-    }
-
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('bg-indigo-600', 'text-white');
-        b.classList.add('text-slate-400');
-      });
-      document.querySelectorAll('.tab-content').forEach(c => {
-        c.classList.add('hidden');
-        c.classList.remove('flex');
-      });
-
-      if (tabName === 'theme') {
-        document.getElementById('tabTheme').classList.add('bg-indigo-600', 'text-white');
-        document.getElementById('contentTheme').classList.remove('hidden');
-        document.getElementById('contentTheme').classList.add('flex');
-      } else if (tabName === 'layout') {
-        document.getElementById('tabLayout').classList.add('bg-indigo-600', 'text-white');
-        document.getElementById('contentLayout').classList.remove('hidden');
-        document.getElementById('contentLayout').classList.add('flex');
-      } else if (tabName === 'text') {
-        document.getElementById('tabText').classList.add('bg-indigo-600', 'text-white');
-        document.getElementById('contentText').classList.remove('hidden');
-        document.getElementById('contentText').classList.add('flex');
-      }
     }
 
     function attachEventListeners() {
-      DOM.btnStartCapture.addEventListener('click', runCaptureSequence);
-      DOM.btnNewSession.addEventListener('click', () => {
-        if (confirm('Start new photo session? Current photos and Live Motion clips will be cleared.')) {
-          state.photos = [];
-          state.liveClips = [];
-          renderPhotoStrip();
-        }
+      DOM.btnStartSession.addEventListener('click', startPhotoSession);
+      DOM.btnReset.addEventListener('click', resetSession);
+      DOM.btnDownloadImage.addEventListener('click', downloadPNGImage);
+      DOM.btnDownloadVideoReel.addEventListener('click', downloadCombinedVideoReel);
+      DOM.btnPrint.addEventListener('click', () => window.print());
+      DOM.btnQRCode.addEventListener('click', generateQRCode);
+      DOM.btnCloseQR.addEventListener('click', () => DOM.qrModal.classList.add('hidden'));
+
+      DOM.layoutSelect.addEventListener('change', (e) => {
+        state.currentLayout = e.target.value;
+        DOM.currentLayoutBadge.innerText = LAYOUT_CONFIGS[state.currentLayout].name;
+        resetSession();
       });
 
-      DOM.btnToggleMirror.addEventListener('click', () => {
-        state.isMirror = !state.isMirror;
-        DOM.webcam.classList.toggle('mirror', state.isMirror);
-      });
-
-      DOM.btnSoundToggle.addEventListener('click', () => {
-        state.soundEnabled = !state.soundEnabled;
-        const soundIcon = document.getElementById('soundIcon');
-        soundIcon.setAttribute('data-lucide', state.soundEnabled ? 'volume-2' : 'volume-x');
-        lucide.createIcons();
-      });
-
-      DOM.chkLivePhoto.addEventListener('change', (e) => {
-        state.isLivePhotoEnabled = e.target.checked;
-      });
-
-      DOM.txtCaption.addEventListener('input', (e) => {
-        state.customCaption = e.target.value;
+      DOM.themeSelect.addEventListener('change', (e) => {
+        state.currentTheme = e.target.value;
         renderPhotoStrip();
       });
 
-      DOM.chkShowDate.addEventListener('change', (e) => {
-        state.showDate = e.target.checked;
-        renderPhotoStrip();
+      DOM.filterSelect.addEventListener('change', (e) => {
+        state.currentFilter = e.target.value;
+        DOM.video.style.filter = state.currentFilter;
       });
-
-      DOM.btnDownloadPNG.addEventListener('click', () => {
-        if (state.photos.length === 0) {
-          alert('Please capture photos before downloading!');
-          return;
-        }
-        const link = document.createElement('a');
-        link.download = `photobox-snap-${Date.now()}.png`;
-        link.href = DOM.previewCanvas.toDataURL('image/png', 1.0);
-        link.click();
-      });
-
-      DOM.btnOpenQR.addEventListener('click', generateQRCode);
-      DOM.btnCloseQR.addEventListener('click', () => {
-        DOM.qrModal.classList.remove('flex');
-        DOM.qrModal.classList.add('hidden');
-      });
-
-      DOM.btnCopyQRLink.addEventListener('click', () => {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Photo link copied to clipboard!');
-      });
-
-      DOM.btnPrintJob.addEventListener('click', triggerPrintJob);
-
-      document.querySelectorAll('.timer-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.timer-btn').forEach(b => {
-            b.classList.remove('bg-indigo-600', 'text-white');
-            b.classList.add('text-slate-400');
-          });
-          e.target.classList.remove('text-slate-400');
-          e.target.classList.add('bg-indigo-600', 'text-white');
-          state.countdownTime = parseInt(e.target.dataset.timer);
-        });
-      });
-
-      attachLiveMotionPreviewHover();
     }
 
-    /* ==========================================================================
-       9. APP INITIALIZATION
-       ========================================================================== */
-    window.onload = () => {
+    /* ------------------------------------------
+       7. APPLICATION INITIALIZATION
+       ------------------------------------------ */
+    function initApp() {
       initCamera();
       attachEventListeners();
       renderPhotoStrip();
-      lucide.createIcons();
-    };
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
