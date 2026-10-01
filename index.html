@@ -1,787 +1,279 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-slate-950">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNAP! Studio Pro - Interactive Korean PhotoBooth</title>
-  
-  <!-- Tailwind CSS & Lucide Icons -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SNAP Studio - Photobox Canvas with Custom Frame Overlay</title>
+  <!-- Tailwind CSS CDN for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
-    
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .font-display {
-      font-family: 'Space Grotesk', sans-serif;
-    }
-
-    /* Print Optimization */
-    @media print {
-      body * { visibility: hidden; }
-      #printArea, #printArea * { visibility: visible; }
-      #printArea {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: white;
-      }
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 9999px;
+    /* Styling canvas preview */
+    #photoboxCanvas {
+      max-height: 80vh;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
-<body class="text-slate-100 min-h-full flex flex-col justify-between selection:bg-pink-500 selection:text-white">
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
 
-  <!-- TOP BAR / HEADER -->
-  <header class="px-6 py-3.5 border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-rose-500 to-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-pink-500/25">
-        📸
-      </div>
-      <div>
-        <h1 class="text-base font-bold tracking-tight text-white font-display flex items-center gap-2">
-          SNAP! Studio Pro <span class="text-[10px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">Korean Kiosk</span>
-        </h1>
-        <p class="text-xs text-slate-400">Live Photobox, GIF Reel & Custom Print Studio</p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <div class="hidden sm:flex items-center gap-2 text-xs bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl text-slate-300">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="font-medium">Webcam Ready</span>
-      </div>
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 py-4 px-6 mb-8 shadow-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold tracking-tight text-indigo-600">SNAP Studio <span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full font-normal">Photobox Canvas</span></h1>
+      <span class="text-sm text-gray-500">Custom Frame Overlay Feature</span>
     </div>
   </header>
 
-  <!-- WORKSPACE MAIN GRID -->
-  <main class="container mx-auto p-4 md:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl items-start">
-    
-    <!-- LEFT COLUMN: CAMERA BOOTH & LIVE CONTROL (7 Cols) -->
-    <div class="lg:col-span-7 flex flex-col gap-5">
+  <main class="max-w-6xl mx-auto px-4 pb-12">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       
-      <!-- Main Live Viewport Box -->
-      <div class="relative w-full aspect-[4/3] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center group">
-        
-        <!-- Live Mirror Video Feed -->
-        <video id="webcam" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100 transition-all duration-300"></video>
-        
-        <!-- Camera Studio Flash Light Effect -->
-        <div id="flashOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-30 transition-opacity duration-100"></div>
-
-        <!-- Countdown Overlay System -->
-        <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md hidden z-20 flex flex-col items-center justify-center">
-          <span id="countdownText" class="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 via-rose-400 to-indigo-400 font-display animate-pulse">3</span>
-          <p id="statusText" class="text-xs font-semibold text-slate-300 mt-4 bg-slate-800/90 px-4 py-2 rounded-full border border-slate-700 tracking-wide">
-            Bersiaplah untuk pose berikutnya!
-          </p>
+      <!-- Control Panel (Left Sidebar) -->
+      <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold mb-1">Pengaturan Canvas</h2>
+          <p class="text-sm text-gray-500">Unggah foto dan bingkai kustom berformat PNG transparan.</p>
         </div>
 
-        <!-- Top Badges Overlay -->
-        <div class="absolute top-4 left-4 right-4 flex justify-between items-center pointer-events-none z-10">
-          <div class="bg-slate-950/70 backdrop-blur border border-slate-800 text-slate-200 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-pink-500"></span>
-            <span id="layoutNameBadge">4-Frame Photo Strip</span>
-          </div>
-          <div id="captureProgressBadge" class="bg-slate-950/70 backdrop-blur border border-slate-800 text-pink-400 px-3.5 py-1.5 rounded-full text-xs font-bold">
-            0 / 4 Pose
+        <hr class="border-gray-100" />
+
+        <!-- Input 1: Custom Frame PNG Overlay -->
+        <div class="space-y-2">
+          <label for="overlayInput" class="block text-sm font-medium text-gray-700">
+            1. Upload Custom Frame (PNG Transparan)
+          </label>
+          <input 
+            type="file" 
+            id="overlayInput" 
+            accept="image/png" 
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer border border-gray-200 rounded-xl"
+          />
+          <div id="overlayStatus" class="hidden flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-2.5 rounded-xl mt-2">
+            <span>✓ Overlay Frame Aktif</span>
+            <button id="removeOverlayBtn" class="font-bold underline hover:text-emerald-900">Hapus Frame</button>
           </div>
         </div>
 
-      </div>
-
-      <!-- Kiosk Capture Controls -->
-      <div class="grid grid-cols-3 gap-3">
-        <button id="btnStartSession" class="col-span-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-pink-600/30 transition active:scale-[0.98] flex items-center justify-center gap-3">
-          <i data-lucide="camera" class="w-5 h-5"></i>
-          <span>MULAI SESI FOTO</span>
-        </button>
-        <button id="btnReset" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-4 px-4 rounded-2xl border border-slate-700 transition active:scale-[0.98] flex items-center justify-center gap-2">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-          <span>Reset</span>
-        </button>
-      </div>
-
-      <!-- Live Retouch & Filter Bar -->
-      <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex flex-col gap-2">
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i> Live Retouch & Camera Filters
-        </label>
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1">
-          <button data-filter="none" class="filter-btn active bg-pink-500/20 border-pink-500 text-pink-300 text-xs py-2 rounded-xl border font-medium">Normal</button>
-          <button data-filter="smooth" class="filter-btn bg-slate-800 border-slate-700 text-slate-300 text-xs py-2 rounded-xl border hover:bg-slate-700 font-medium">Smooth Skin</button>
-          <button data-filter="vintage" class="filter-btn bg-slate-800 border-slate-700 text-slate-300 text-xs py-2 rounded-xl border hover:bg-slate-700 font-medium">Vintage Warm</button>
-          <button data-filter="mono" class="filter-btn bg-slate-800 border-slate-700 text-slate-300 text-xs py-2 rounded-xl border hover:bg-slate-700 font-medium">Monochrome</button>
-          <button data-filter="cyber" class="filter-btn bg-slate-800 border-slate-700 text-slate-300 text-xs py-2 rounded-xl border hover:bg-slate-700 font-medium">Cyber Cool</button>
-          <button data-filter="soft" class="filter-btn bg-slate-800 border-slate-700 text-slate-300 text-xs py-2 rounded-xl border hover:bg-slate-700 font-medium">Soft Pastel</button>
-        </div>
-      </div>
-
-      <!-- Live Video Motion & GIF Reel Container -->
-      <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex flex-col gap-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <i data-lucide="film" class="w-4 h-4 text-indigo-400"></i> Live Motion Reel (.WebM / Video)
-          </span>
-          <span id="reelStatusBadge" class="text-[10px] text-slate-500 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Belum Terekam</span>
-        </div>
-        
-        <div class="relative w-full aspect-[16/9] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center">
-          <video id="combinedReelVideo" controls loop playsinline class="w-full h-full object-cover hidden"></video>
-          <div id="reelPlaceholder" class="text-center p-6 text-slate-600 flex flex-col items-center gap-2">
-            <i data-lucide="clapperboard" class="w-8 h-8 opacity-40"></i>
-            <p class="text-xs">Selesaikan sesi foto untuk merender video gerakan *Live Motion* Anda secara otomatis.</p>
-          </div>
-        </div>
-
-        <button id="btnDownloadVideoReel" disabled class="w-full bg-slate-800 opacity-50 cursor-not-allowed text-slate-400 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span>Unduh Video Motion Reel (.webm)</span>
-        </button>
-      </div>
-
-    </div>
-
-    <!-- RIGHT COLUMN: PHOTO CANVAS & FRAME CUSTOMIZER (5 Cols) -->
-    <div class="lg:col-span-5 flex flex-col gap-5 bg-slate-900/50 border border-slate-800/80 p-5 rounded-3xl">
-      
-      <!-- Customizer Controls -->
-      <div class="space-y-4">
-        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <i data-lucide="palette" class="w-4 h-4 text-pink-400"></i> Frame & Customizer
-        </h2>
-
-        <div class="grid grid-cols-2 gap-3">
-          <!-- Layout Selection -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Layout Photo</label>
-            <select id="layoutSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 outline-none focus:border-pink-500">
-              <option value="strip4">4-Frame Strip (K-Style)</option>
-              <option value="strip3">3-Frame Strip</option>
-              <option value="grid2x2">2x2 Quad Grid</option>
-              <option value="polaroid">Single Polaroid</option>
-            </select>
-          </div>
-
-          <!-- Preset Theme Selection -->
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Tema Bingkai</label>
-            <select id="themeSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 outline-none focus:border-pink-500">
-              <option value="kpopPastel">K-Pop Pastel Pink</option>
-              <option value="darkMono">Dark Monochrome</option>
-              <option value="cyberNeon">Cyberpunk Neon</option>
-              <option value="y2kRetro">Y2K Retro Vibe</option>
-              <option value="cuteAnime">Kawaii Sweet</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Frame Color Customizer & Sticker Select -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Warna Frame Custom</label>
-            <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 p-1 rounded-xl">
-              <input type="color" id="frameColorPicker" value="#f472b6" class="w-8 h-8 rounded-lg bg-transparent cursor-pointer border-0">
-              <span id="colorHexText" class="text-xs text-slate-300 font-mono">#f472b6</span>
+        <!-- Input 2: Photos Input -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">
+            2. Upload 3 Foto Photobox
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label for="photo0" class="block text-xs text-center text-gray-500 mb-1">Foto #1</label>
+              <input type="file" id="photo0" accept="image/*" class="photo-input hidden" data-index="0" />
+              <button onclick="document.getElementById('photo0').click()" class="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-xs text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition">
+                + Foto 1
+              </button>
+            </div>
+            <div>
+              <label for="photo1" class="block text-xs text-center text-gray-500 mb-1">Foto #2</label>
+              <input type="file" id="photo1" accept="image/*" class="photo-input hidden" data-index="1" />
+              <button onclick="document.getElementById('photo1').click()" class="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-xs text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition">
+                + Foto 2
+              </button>
+            </div>
+            <div>
+              <label for="photo2" class="block text-xs text-center text-gray-500 mb-1">Foto #3</label>
+              <input type="file" id="photo2" accept="image/*" class="photo-input hidden" data-index="2" />
+              <button onclick="document.getElementById('photo2').click()" class="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-xs text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition">
+                + Foto 3
+              </button>
             </div>
           </div>
+        </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Tambah Stiker Hiasan</label>
-            <select id="stickerSelect" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 outline-none focus:border-pink-500">
-              <option value="none">Tanpa Stiker</option>
-              <option value="hearts">💕 Heart Love</option>
-              <option value="sparkles">✨ Sparkles</option>
-              <option value="stars">⭐ Cute Stars</option>
-              <option value="stamps">🎀 Kawaii Ribbons</option>
-            </select>
+        <!-- Input 3: Background Color -->
+        <div class="space-y-2">
+          <label for="bgColorInput" class="block text-sm font-medium text-gray-700">
+            3. Warna Background Strip
+          </label>
+          <div class="flex items-center gap-3">
+            <input type="color" id="bgColorInput" value="#ffffff" class="h-10 w-20 p-1 border border-gray-200 rounded-xl cursor-pointer" />
+            <span id="colorHex" class="text-xs text-gray-500 font-mono">#FFFFFF</span>
           </div>
         </div>
+
+        <hr class="border-gray-100" />
+
+        <!-- Download Button -->
+        <button 
+          id="downloadBtn" 
+          class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 transition duration-200 flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Download Hasil Photobox
+        </button>
       </div>
 
-      <hr class="border-slate-800">
-
-      <!-- Printable Photo Strip Canvas Container -->
-      <div class="flex flex-col items-center gap-3">
-        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider self-start flex items-center gap-2">
-          <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i> Hasil Photo Strip Canvas
-        </label>
+      <!-- Canvas Preview Area (Right Side) -->
+      <div class="lg:col-span-7 flex flex-col items-center justify-center bg-gray-200/50 p-6 rounded-2xl border border-dashed border-gray-300 min-h-[600px]">
+        <p class="text-xs text-gray-400 font-medium mb-3">CANVAS PREVIEW (600 x 1800 px)</p>
         
-        <div id="printArea" class="w-full flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-inner overflow-auto max-h-[460px]">
-          <canvas id="stripCanvas" class="max-h-[420px] w-auto h-auto rounded-lg shadow-2xl transition-all duration-300"></canvas>
-        </div>
-      </div>
-
-      <!-- Export & Print Action Buttons -->
-      <div class="grid grid-cols-3 gap-2 pt-2">
-        <button id="btnDownloadImage" class="bg-pink-600 hover:bg-pink-500 text-white font-semibold py-3 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20">
-          <i data-lucide="download" class="w-4 h-4"></i>
-          <span>Unduh PNG</span>
-        </button>
-        <button id="btnPrint" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-3 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-2">
-          <i data-lucide="printer" class="w-4 h-4"></i>
-          <span>Cetak / Print</span>
-        </button>
-        <button id="btnQRCode" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-3 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-2">
-          <i data-lucide="qr-code" class="w-4 h-4"></i>
-          <span>QR Share</span>
-        </button>
+        <!-- Canvas Tag -->
+        <canvas id="photoboxCanvas" width="600" height="1800" class="w-auto h-auto rounded-lg bg-white"></canvas>
       </div>
 
     </div>
-
   </main>
 
-  <!-- QR CODE MODAL OVERLAY -->
-  <div id="qrModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center gap-4 text-center shadow-2xl">
-      <div class="w-12 h-12 bg-pink-500/10 border border-pink-500/20 rounded-2xl flex items-center justify-center text-pink-400">
-        <i data-lucide="qr-code" class="w-6 h-6"></i>
-      </div>
-      <div>
-        <h3 class="text-base font-bold text-white">Pindai QR Code Foto Anda</h3>
-        <p class="text-xs text-slate-400 mt-1">Scan QR ini melalui kamera HP untuk mengunduh hasil photo strip langsung ke HP Anda.</p>
-      </div>
-      <div id="qrcode" class="p-3 bg-white rounded-2xl shadow-lg my-2"></div>
-      <button id="btnCloseQR" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition">
-        Tutup
-      </button>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="p-4 border-t border-slate-800 text-center text-xs text-slate-500 bg-slate-950">
-    &copy; 2026 SNAP! Studio Pro &bull; Ultimate Korean-Style Photobox Experience
-  </footer>
-
-  <!-- ==========================================
-       MODULAR JAVASCRIPT ARCHITECTURE
-       ========================================== -->
   <script>
-    /* Initialize Lucide Icons */
-    lucide.createIcons();
-
-    /* ------------------------------------------
-       1. STATE & CONFIGURATION MODULE
-       ------------------------------------------ */
-    const CONFIG = {
-      photoWidth: 600,
-      photoHeight: 450,
-      padding: 24,
-      countdownSeconds: 3,
-      liveClipDurationMs: 1800
+    // State Application
+    const state = {
+      canvas: document.getElementById('photoboxCanvas'),
+      ctx: document.getElementById('photoboxCanvas').getContext('2d'),
+      photos: [null, null, null], // Menampung 3 objek Image foto
+      overlayImage: null,          // Menampung objek Image frame PNG
+      bgColor: '#ffffff'           // Warna latar belakang default
     };
 
-    const LAYOUT_CONFIGS = {
-      strip4: { name: '4-Frame Photo Strip', count: 4, cols: 1, type: 'strip' },
-      strip3: { name: '3-Frame Photo Strip', count: 3, cols: 1, type: 'strip' },
-      grid2x2: { name: '2x2 Quad Grid', count: 4, cols: 2, type: 'grid' },
-      polaroid: { name: 'Single Polaroid', count: 1, cols: 1, type: 'polaroid' }
-    };
+    // DOM Elements
+    const overlayInput = document.getElementById('overlayInput');
+    const removeOverlayBtn = document.getElementById('removeOverlayBtn');
+    const overlayStatus = document.getElementById('overlayStatus');
+    const bgColorInput = document.getElementById('bgColorInput');
+    const colorHex = document.getElementById('colorHex');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const photoInputs = document.querySelectorAll('.photo-input');
 
-    const THEMES = {
-      kpopPastel: { name: 'K-Pop Pastel', bg: '#f472b6', text: '#ffffff', accent: '#fde047', font: 'sans-serif', label: 'SNAP! K-PHOTO ★' },
-      darkMono: { name: 'Dark Monochrome', bg: '#0f172a', text: '#f8fafc', accent: '#94a3b8', font: 'sans-serif', label: 'MEMORIES // STUDIO' },
-      cyberNeon: { name: 'Cyberpunk Neon', bg: '#0284c7', text: '#38bdf8', accent: '#f43f5e', font: 'monospace', label: 'CYBER SNAP 2026' },
-      y2kRetro: { name: 'Y2K Retro', bg: '#8b5cf6', text: '#f472b6', accent: '#facc15', font: 'monospace', label: '★ Y2K PHOTOBOX ★' },
-      cuteAnime: { name: 'Kawaii Sweet', bg: '#fb7185', text: '#ffffff', accent: '#f43f5e', font: 'cursive', label: 'KAWAII SNAP ✨' }
-    };
+    // Init Redraw
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCanvas();
+    });
 
-    const FILTERS = {
-      none: 'none',
-      smooth: 'brightness(108%) contrast(95%) saturate(110%) blur(0.3px)',
-      vintage: 'sepia(35%) contrast(110%) brightness(95%) saturate(120%)',
-      mono: 'grayscale(100%) contrast(120%)',
-      cyber: 'hue-rotate(180deg) contrast(125%) saturate(140%)',
-      soft: 'brightness(112%) contrast(90%) saturate(115%)'
-    };
+    // 1. Handler Upload Overlay PNG Frame
+    overlayInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    let state = {
-      currentLayout: 'strip4',
-      currentTheme: 'kpopPastel',
-      customBgColor: '#f472b6',
-      currentFilter: 'none',
-      selectedSticker: 'none',
-      capturedPhotos: [],
-      liveClips: [],
-      combinedReelBlob: null,
-      isSessionRunning: false
-    };
-
-    const DOM = {
-      video: document.getElementById('webcam'),
-      btnStartSession: document.getElementById('btnStartSession'),
-      btnReset: document.getElementById('btnReset'),
-      btnDownloadImage: document.getElementById('btnDownloadImage'),
-      btnPrint: document.getElementById('btnPrint'),
-      btnQRCode: document.getElementById('btnQRCode'),
-      btnDownloadVideoReel: document.getElementById('btnDownloadVideoReel'),
-      layoutSelect: document.getElementById('layoutSelect'),
-      themeSelect: document.getElementById('themeSelect'),
-      frameColorPicker: document.getElementById('frameColorPicker'),
-      colorHexText: document.getElementById('colorHexText'),
-      stickerSelect: document.getElementById('stickerSelect'),
-      stripCanvas: document.getElementById('stripCanvas'),
-      countdownOverlay: document.getElementById('countdownOverlay'),
-      countdownText: document.getElementById('countdownText'),
-      statusText: document.getElementById('statusText'),
-      flashOverlay: document.getElementById('flashOverlay'),
-      layoutNameBadge: document.getElementById('layoutNameBadge'),
-      captureProgressBadge: document.getElementById('captureProgressBadge'),
-      combinedReelVideo: document.getElementById('combinedReelVideo'),
-      reelPlaceholder: document.getElementById('reelPlaceholder'),
-      reelStatusBadge: document.getElementById('reelStatusBadge'),
-      qrModal: document.getElementById('qrModal'),
-      qrcodeContainer: document.getElementById('qrcode'),
-      btnCloseQR: document.getElementById('btnCloseQR')
-    };
-
-    /* ------------------------------------------
-       2. CAMERA & AUDIO MODULE
-       ------------------------------------------ */
-    async function initCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: "user" },
-          audio: false
-        });
-        DOM.video.srcObject = stream;
-      } catch (err) {
-        alert("Gagal mengkoneksikan ke webcam. Mohon izinkan akses kamera di browser.");
-        console.error("Camera Error:", err);
-      }
-    }
-
-    function playShutterSound() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.08);
-      } catch (e) {
-        console.log("Audio AudioContext blocked");
-      }
-    }
-
-    function triggerFlash() {
-      DOM.flashOverlay.style.opacity = '1';
-      setTimeout(() => DOM.flashOverlay.style.opacity = '0', 150);
-    }
-
-    /* ------------------------------------------
-       3. CAPTURE & RECORDING MODULE
-       ------------------------------------------ */
-    function recordLiveClip(stream, durationMs) {
-      return new Promise((resolve) => {
-        const chunks = [];
-        let mediaRecorder;
-
-        try {
-          mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        } catch (e) {
-          mediaRecorder = new MediaRecorder(stream);
-        }
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          resolve(blob);
-        };
-
-        mediaRecorder.start();
-        setTimeout(() => {
-          if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-        }, durationMs);
-      });
-    }
-
-    function capturePhotoFrame() {
-      const canvas = document.createElement('canvas');
-      canvas.width = CONFIG.photoWidth;
-      canvas.height = CONFIG.photoHeight;
-      const ctx = canvas.getContext('2d');
-
-      // Mirror horizontally
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.filter = FILTERS[state.currentFilter];
-      ctx.drawImage(DOM.video, 0, 0, canvas.width, canvas.height);
-
-      triggerFlash();
-      playShutterSound();
-
-      return canvas;
-    }
-
-    function runTimerCountdown(seconds, status) {
-      return new Promise((resolve) => {
-        DOM.countdownOverlay.classList.remove('hidden');
-        DOM.statusText.innerText = status;
-        let count = seconds;
-        DOM.countdownText.innerText = count;
-
-        const interval = setInterval(() => {
-          count--;
-          if (count > 0) {
-            DOM.countdownText.innerText = count;
-          } else {
-            clearInterval(interval);
-            DOM.countdownOverlay.classList.add('hidden');
-            resolve();
-          }
-        }, 1000);
-      });
-    }
-
-    async function startPhotoSession() {
-      const layout = LAYOUT_CONFIGS[state.currentLayout];
-      if (state.capturedPhotos.length >= layout.count) {
-        alert("Sesi foto telah lengkap! Klik Reset untuk mengulang.");
+      if (file.type !== 'image/png') {
+        alert('Harap masukkan file berformat PNG transparan untuk frame!');
+        overlayInput.value = '';
         return;
       }
 
-      state.isSessionRunning = true;
-      DOM.btnStartSession.disabled = true;
-      DOM.btnStartSession.classList.add('opacity-50', 'cursor-not-allowed');
-
-      const stream = DOM.video.srcObject;
-
-      for (let i = state.capturedPhotos.length; i < layout.count; i++) {
-        DOM.captureProgressBadge.innerText = `${i + 1} / ${layout.count} Pose`;
-        
-        await runTimerCountdown(CONFIG.countdownSeconds, `Tersenyumlah! Pose ${i + 1} dari ${layout.count}`);
-        
-        const recordingPromise = recordLiveClip(stream, CONFIG.liveClipDurationMs);
-        const photoCanvas = capturePhotoFrame();
-        
-        state.capturedPhotos.push(photoCanvas);
-        renderPhotoStrip();
-
-        const videoBlob = await recordingPromise;
-        state.liveClips.push(videoBlob);
-      }
-
-      await stitchClipsIntoCombinedReel();
-
-      state.isSessionRunning = false;
-      DOM.btnStartSession.disabled = false;
-      DOM.btnStartSession.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
-
-    /* ------------------------------------------
-       4. REEL STITCHER MODULE
-       ------------------------------------------ */
-    async function stitchClipsIntoCombinedReel() {
-      if (state.liveClips.length === 0) return;
-
-      DOM.reelStatusBadge.innerText = "Merender Reel...";
-      DOM.reelStatusBadge.className = "text-[10px] text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 font-semibold";
-
-      const canvas = document.createElement('canvas');
-      canvas.width = CONFIG.photoWidth;
-      canvas.height = CONFIG.photoHeight;
-      const ctx = canvas.getContext('2d');
-
-      const stream = canvas.captureStream(30);
-      let mediaRecorder;
-      try {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-      } catch (e) {
-        mediaRecorder = new MediaRecorder(stream);
-      }
-
-      const chunks = [];
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) chunks.push(e.data);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          state.overlayImage = img;
+          overlayStatus.classList.remove('hidden');
+          renderCanvas();
+        };
+        img.src = event.target.result;
       };
+      reader.readAsDataURL(file);
+    });
 
-      const recorderStopped = new Promise((resolve) => {
-        mediaRecorder.onstop = () => {
-          state.combinedReelBlob = new Blob(chunks, { type: 'video/webm' });
-          resolve();
-        };
-      });
+    // Remove Overlay Frame
+    removeOverlayBtn.addEventListener('click', () => {
+      state.overlayImage = null;
+      overlayInput.value = '';
+      overlayStatus.classList.add('hidden');
+      renderCanvas();
+    });
 
-      mediaRecorder.start();
+    // 2. Handler Upload Individual Photos
+    photoInputs.forEach((input) => {
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const index = parseInt(e.target.dataset.index);
+        if (!file) return;
 
-      for (let i = 0; i < state.liveClips.length; i++) {
-        const videoUrl = URL.createObjectURL(state.liveClips[i]);
-        const tempVideo = document.createElement('video');
-        tempVideo.src = videoUrl;
-        tempVideo.muted = true;
-        tempVideo.playsInline = true;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            state.photos[index] = img;
+            
+            // Highlight button slot UI
+            const btn = e.target.nextElementSibling;
+            btn.classList.remove('border-dashed', 'border-gray-300', 'text-gray-400');
+            btn.classList.add('border-solid', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-600');
+            btn.textContent = `✓ Foto ${index + 1}`;
 
-        await new Promise((resolveVideo) => {
-          tempVideo.onloadedmetadata = () => {
-            tempVideo.play();
-            function drawFrame() {
-              if (!tempVideo.paused && !tempVideo.ended) {
-                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                requestAnimationFrame(drawFrame);
-              } else {
-                resolveVideo();
-              }
-            }
-            drawFrame();
+            renderCanvas();
           };
-        });
-        URL.revokeObjectURL(videoUrl);
-      }
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    });
 
-      mediaRecorder.stop();
-      await recorderStopped;
+    // 3. Handler Background Color Change
+    bgColorInput.addEventListener('input', (e) => {
+      state.bgColor = e.target.value;
+      colorHex.textContent = e.target.value.toUpperCase();
+      renderCanvas();
+    });
 
-      const combinedUrl = URL.createObjectURL(state.combinedReelBlob);
-      DOM.combinedReelVideo.src = combinedUrl;
-      DOM.combinedReelVideo.classList.remove('hidden');
-      DOM.reelPlaceholder.classList.add('hidden');
+    // 4. Core Render Engine Canvas
+    function renderCanvas() {
+      const { canvas, ctx, photos, overlayImage, bgColor } = state;
 
-      DOM.btnDownloadVideoReel.disabled = false;
-      DOM.btnDownloadVideoReel.classList.remove('opacity-50', 'cursor-not-allowed', 'text-slate-400');
-      DOM.btnDownloadVideoReel.classList.add('bg-indigo-600', 'hover:bg-indigo-500', 'text-white');
+      // Layer 1: Background Color
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      DOM.reelStatusBadge.innerText = "Reel Ready";
-      DOM.reelStatusBadge.className = "text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-semibold";
-    }
+      // Layer 2: Draw Snapshot Photos (3 Slot Layout Vertikal)
+      const photoWidth = 520;
+      const photoHeight = 390;
+      const startX = 40;
+      const startY = 50;
+      const gapY = 40;
 
-    /* ------------------------------------------
-       5. CANVAS RENDERER & STICKER MODULE
-       ------------------------------------------ */
-    function drawStickers(ctx, x, y, width, height) {
-      if (state.selectedSticker === 'none') return;
-      ctx.font = '28px sans-serif';
-      
-      if (state.selectedSticker === 'hearts') {
-        ctx.fillText('💕', x + width - 40, y + 35);
-      } else if (state.selectedSticker === 'sparkles') {
-        ctx.fillText('✨', x + width - 40, y + 35);
-        ctx.fillText('✨', x + 15, y + height - 15);
-      } else if (state.selectedSticker === 'stars') {
-        ctx.fillText('⭐', x + width - 40, y + 35);
-      } else if (state.selectedSticker === 'stamps') {
-        ctx.fillText('🎀', x + 15, y + 35);
-      }
-    }
+      photos.forEach((img, idx) => {
+        const currentY = startY + idx * (photoHeight + gapY);
 
-    function renderPhotoStrip() {
-      const layout = LAYOUT_CONFIGS[state.currentLayout];
-      const theme = THEMES[state.currentTheme];
-
-      const canvas = DOM.stripCanvas;
-      const ctx = canvas.getContext('2d');
-
-      let totalWidth, totalHeight;
-
-      if (layout.type === 'strip') {
-        totalWidth = CONFIG.photoWidth + (CONFIG.padding * 2);
-        totalHeight = (CONFIG.photoHeight * layout.count) + (CONFIG.padding * (layout.count + 1)) + 90;
-      } else if (layout.type === 'grid') {
-        totalWidth = (CONFIG.photoWidth * 2) + (CONFIG.padding * 3);
-        totalHeight = (CONFIG.photoHeight * 2) + (CONFIG.padding * 3) + 100;
-      } else if (layout.type === 'polaroid') {
-        totalWidth = CONFIG.photoWidth + (CONFIG.padding * 2);
-        totalHeight = CONFIG.photoHeight + (CONFIG.padding * 2) + 160;
-      }
-
-      canvas.width = totalWidth;
-      canvas.height = totalHeight;
-
-      // Draw Frame Background (Custom color or preset theme)
-      ctx.fillStyle = state.customBgColor || theme.bg;
-      ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-      // Render Photo Frames
-      for (let i = 0; i < layout.count; i++) {
-        let xPos, yPos;
-
-        if (layout.type === 'strip' || layout.type === 'polaroid') {
-          xPos = CONFIG.padding;
-          yPos = CONFIG.padding + i * (CONFIG.photoHeight + CONFIG.padding);
-        } else if (layout.type === 'grid') {
-          const col = i % 2;
-          const row = Math.floor(i / 2);
-          xPos = CONFIG.padding + col * (CONFIG.photoWidth + CONFIG.padding);
-          yPos = CONFIG.padding + row * (CONFIG.photoHeight + CONFIG.padding);
-        }
-
-        if (state.capturedPhotos[i]) {
-          ctx.drawImage(state.capturedPhotos[i], xPos, yPos);
-          drawStickers(ctx, xPos, yPos, CONFIG.photoWidth, CONFIG.photoHeight);
+        if (img) {
+          // Object-fit cover effect pada canvas slot
+          drawCoverImage(ctx, img, startX, currentY, photoWidth, photoHeight);
         } else {
-          ctx.fillStyle = 'rgba(0,0,0,0.15)';
-          ctx.fillRect(xPos, yPos, CONFIG.photoWidth, CONFIG.photoHeight);
-          ctx.fillStyle = theme.text;
-          ctx.font = `bold 22px ${theme.font}`;
+          // Placeholder Box untuk slot foto kosong
+          ctx.fillStyle = '#f3f4f6';
+          ctx.fillRect(startX, currentY, photoWidth, photoHeight);
+          ctx.fillStyle = '#9ca3af';
+          ctx.font = '24px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(`Slot Pose ${i + 1}`, xPos + (CONFIG.photoWidth / 2), yPos + (CONFIG.photoHeight / 2));
+          ctx.fillText(`Slot Foto #${idx + 1}`, canvas.width / 2, currentY + photoHeight / 2);
         }
+      });
+
+      // Layer 3: Custom Overlay Frame PNG (Rendered Paling Atas Menutupi Foto)
+      if (overlayImage) {
+        ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
       }
-
-      // Branding Title & Timestamp
-      ctx.fillStyle = theme.text;
-      ctx.font = `bold 26px ${theme.font}`;
-      ctx.textAlign = 'center';
-      
-      const labelY = totalHeight - (layout.type === 'polaroid' ? 70 : 45);
-      ctx.fillText(theme.label, totalWidth / 2, labelY);
-
-      const dateStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
-      ctx.fillStyle = theme.accent;
-      ctx.font = `14px ${theme.font}`;
-      ctx.fillText(dateStr, totalWidth / 2, labelY + 25);
     }
 
-    /* ------------------------------------------
-       6. EXPORT, PRINT & EVENT LISTENERS
-       ------------------------------------------ */
-    function resetSession() {
-      state.capturedPhotos = [];
-      state.liveClips = [];
-      state.combinedReelBlob = null;
+    // Utility: Crop & Center Fit Foto ke dalam Box Slot (Object-Fit: Cover)
+    function drawCoverImage(ctx, img, x, y, w, h) {
+      const imgRatio = img.width / img.height;
+      const targetRatio = w / h;
+      let sx, sy, sw, sh;
 
-      DOM.combinedReelVideo.src = "";
-      DOM.combinedReelVideo.classList.add('hidden');
-      DOM.reelPlaceholder.classList.remove('hidden');
+      if (imgRatio > targetRatio) {
+        sh = img.height;
+        sw = img.height * targetRatio;
+        sx = (img.width - sw) / 2;
+        sy = 0;
+      } else {
+        sw = img.width;
+        sh = img.width / targetRatio;
+        sx = 0;
+        sy = (img.height - sh) / 2;
+      }
 
-      DOM.btnDownloadVideoReel.disabled = true;
-      DOM.btnDownloadVideoReel.className = "w-full bg-slate-800 opacity-50 cursor-not-allowed text-slate-400 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2";
-
-      DOM.reelStatusBadge.innerText = "Belum Terekam";
-      DOM.reelStatusBadge.className = "text-[10px] text-slate-500 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700";
-      DOM.captureProgressBadge.innerText = `0 / ${LAYOUT_CONFIGS[state.currentLayout].count} Pose`;
-
-      renderPhotoStrip();
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     }
 
-    function downloadPNGImage() {
-      if (state.capturedPhotos.length === 0) {
-        alert("Silakan selesaikan sesi foto terlebih dahulu!");
-        return;
-      }
+    // 5. Download Canvas Result
+    downloadBtn.addEventListener('click', () => {
       const link = document.createElement('a');
-      link.download = `SNAP_Photobox_${Date.now()}.png`;
-      link.href = DOM.stripCanvas.toDataURL('image/png');
+      link.download = `SNAP_Studio_${Date.now()}.png`;
+      link.href = state.canvas.toDataURL('image/png');
       link.click();
-    }
-
-    function downloadCombinedVideoReel() {
-      if (!state.combinedReelBlob) return;
-      const link = document.createElement('a');
-      link.download = `SNAP_LiveReel_${Date.now()}.webm`;
-      link.href = URL.createObjectURL(state.combinedReelBlob);
-      link.click();
-    }
-
-    function generateQRCode() {
-      if (state.capturedPhotos.length === 0) {
-        alert("Ambil foto terlebih dahulu sebelum membuat QR Code!");
-        return;
-      }
-      DOM.qrcodeContainer.innerHTML = '';
-      const dummyUrl = DOM.stripCanvas.toDataURL('image/png');
-      
-      new QRCode(DOM.qrcodeContainer, {
-        text: dummyUrl.substring(0, 400),
-        width: 180,
-        height: 180
-      });
-
-      DOM.qrModal.classList.remove('hidden');
-    }
-
-    function attachEventListeners() {
-      DOM.btnStartSession.addEventListener('click', startPhotoSession);
-      DOM.btnReset.addEventListener('click', resetSession);
-      DOM.btnDownloadImage.addEventListener('click', downloadPNGImage);
-      DOM.btnDownloadVideoReel.addEventListener('click', downloadCombinedVideoReel);
-      DOM.btnPrint.addEventListener('click', () => window.print());
-      DOM.btnQRCode.addEventListener('click', generateQRCode);
-      DOM.btnCloseQR.addEventListener('click', () => DOM.qrModal.classList.add('hidden'));
-
-      DOM.layoutSelect.addEventListener('change', (e) => {
-        state.currentLayout = e.target.value;
-        DOM.layoutNameBadge.innerText = LAYOUT_CONFIGS[state.currentLayout].name;
-        resetSession();
-      });
-
-      DOM.themeSelect.addEventListener('change', (e) => {
-        state.currentTheme = e.target.value;
-        state.customBgColor = THEMES[state.currentTheme].bg;
-        DOM.frameColorPicker.value = state.customBgColor;
-        DOM.colorHexText.innerText = state.customBgColor;
-        renderPhotoStrip();
-      });
-
-      DOM.frameColorPicker.addEventListener('input', (e) => {
-        state.customBgColor = e.target.value;
-        DOM.colorHexText.innerText = state.customBgColor;
-        renderPhotoStrip();
-      });
-
-      DOM.stickerSelect.addEventListener('change', (e) => {
-        state.selectedSticker = e.target.value;
-        renderPhotoStrip();
-      });
-
-      // Filter Buttons Event Binding
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.filter-btn').forEach(b => {
-            b.classList.remove('active', 'bg-pink-500/20', 'border-pink-500', 'text-pink-300');
-            b.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-300');
-          });
-          btn.classList.add('active', 'bg-pink-500/20', 'border-pink-500', 'text-pink-300');
-          btn.classList.remove('bg-slate-800', 'border-slate-700', 'text-slate-300');
-
-          state.currentFilter = btn.dataset.filter;
-          DOM.video.style.filter = FILTERS[state.currentFilter];
-        });
-      });
-    }
-
-    /* ------------------------------------------
-       7. INITIALIZATION
-       ------------------------------------------ */
-    function initApp() {
-      initCamera();
-      attachEventListeners();
-      renderPhotoStrip();
-    }
-
-    document.addEventListener('DOMContentLoaded', initApp);
+    });
   </script>
 </body>
 </html>
