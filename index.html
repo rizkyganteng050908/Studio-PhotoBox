@@ -3,157 +3,255 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SNAP Studio - Photobox Canvas with Live Camera & Custom Frame Overlay</title>
+  <title>SNAP Studio - Professional Photobox Studio</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
-    #photoboxCanvas {
-      max-height: 80vh;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Glassmorphism & Shadow Effects */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .canvas-shadow {
+      box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.25);
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col">
 
-  <!-- Header -->
-  <header class="bg-white border-b border-gray-200 py-4 px-6 mb-8 shadow-sm">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <h1 class="text-2xl font-bold tracking-tight text-indigo-600">SNAP Studio <span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full font-normal">Photobox Canvas</span></h1>
-      <span class="text-sm text-gray-500">Live Camera & Custom Frame Overlay</span>
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md px-6 py-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            SNAP Studio 
+            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-full">Pro Studio</span>
+          </h1>
+          <p class="text-xs text-slate-400">Custom Canvas Photobox & Live Camera Engine</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button id="downloadBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 flex items-center gap-2 active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export Photobox
+        </button>
+      </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 pb-12">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start h-full">
       
-      <!-- Control Panel (Left Sidebar) -->
-      <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-        <div>
-          <h2 class="text-lg font-semibold mb-1">Pengaturan Canvas & Kamera</h2>
-          <p class="text-sm text-gray-500">Gunakan live kamera atau upload file foto & frame PNG transparan.</p>
-        </div>
-
-        <hr class="border-gray-100" />
-
-        <!-- Fitur Live Camera Feed -->
-        <div class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700">1. Live Camera Preview</label>
-          <div class="relative w-full aspect-video bg-gray-900 rounded-xl overflow-hidden border border-gray-300 flex items-center justify-center">
-            <video id="webcam" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-            <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-800 text-gray-400 p-4 text-center">
-              <svg class="w-8 h-8 mb-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-              <p class="text-xs">Kamera belum diaktifkan</p>
+      <!-- Left Sidebar: Controls -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Camera Live Viewfinder Card -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span id="liveBadge" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+              <h2 class="text-sm font-semibold text-slate-200">Live Viewfinder</h2>
             </div>
+            <button id="startCamBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-lg transition border border-slate-600 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              <span>Mulai Kamera</span>
+            </button>
+          </div>
+
+          <!-- Video Container -->
+          <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 group">
+            <video id="webcam" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+            
+            <!-- Grid Lines Overlay for composition -->
+            <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
+              <div class="border-r border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-b border-white"></div>
+              <div class="border-r border-white"></div>
+              <div class="border-r border-white"></div>
+              <div></div>
+            </div>
+
+            <!-- Standby Placeholder -->
+            <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-slate-400 p-6 text-center space-y-3">
+              <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </div>
+              <p class="text-xs text-slate-400">Kamera belum aktif. Klik <strong>Mulai Kamera</strong> untuk mengambil foto live.</p>
+            </div>
+
             <!-- Countdown Overlay -->
-            <div id="countdown" class="hidden absolute inset-0 bg-black/50 text-white font-bold text-6xl flex items-center justify-center animate-pulse">
+            <div id="countdown" class="hidden absolute inset-0 bg-slate-950/70 backdrop-blur-md text-indigo-400 font-extrabold text-7xl flex items-center justify-center animate-bounce">
               3
             </div>
           </div>
-          <button id="startCamBtn" class="w-full py-2 px-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold text-sm rounded-xl transition">
-            Aktifkan Kamera
-          </button>
         </div>
 
-        <!-- Slot Input Foto (Live Snap / Upload) -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">2. Ambil / Upload Foto (3 Slot)</label>
-          <div class="grid grid-cols-3 gap-2">
+        <!-- Photo Slots Manager -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="text-sm font-semibold text-slate-200">Foto Strip (3 Slot)</h2>
+            <span class="text-xs text-slate-400">Rasio 4:3</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
             <!-- Slot 1 -->
-            <div class="space-y-1">
-              <span class="block text-xs text-center text-gray-500">Foto #1</span>
-              <button onclick="capturePhoto(0)" class="w-full py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
-                📸 Snap 1
-              </button>
-              <input type="file" id="photo0" accept="image/*" class="photo-input hidden" data-index="0" />
-              <button onclick="document.getElementById('photo0').click()" class="w-full py-1 text-[11px] text-gray-500 hover:underline text-center block">
-                Upload
-              </button>
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-2.5 flex flex-col items-center space-y-2 relative group">
+              <div class="w-full aspect-[4/3] rounded-lg bg-slate-800 overflow-hidden relative border border-slate-700 flex items-center justify-center">
+                <img id="prev0" class="w-full h-full object-cover hidden" />
+                <span id="emptyLabel0" class="text-[11px] font-medium text-slate-500">Slot #1</span>
+              </div>
+              <div class="flex w-full gap-1">
+                <button onclick="capturePhoto(0)" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-md transition shadow-sm">
+                  Snap
+                </button>
+                <input type="file" id="photo0" accept="image/*" class="photo-input hidden" data-index="0" />
+                <button onclick="document.getElementById('photo0').click()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-md transition border border-slate-700">
+                  📁
+                </button>
+              </div>
             </div>
+
             <!-- Slot 2 -->
-            <div class="space-y-1">
-              <span class="block text-xs text-center text-gray-500">Foto #2</span>
-              <button onclick="capturePhoto(1)" class="w-full py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
-                📸 Snap 2
-              </button>
-              <input type="file" id="photo1" accept="image/*" class="photo-input hidden" data-index="1" />
-              <button onclick="document.getElementById('photo1').click()" class="w-full py-1 text-[11px] text-gray-500 hover:underline text-center block">
-                Upload
-              </button>
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-2.5 flex flex-col items-center space-y-2 relative group">
+              <div class="w-full aspect-[4/3] rounded-lg bg-slate-800 overflow-hidden relative border border-slate-700 flex items-center justify-center">
+                <img id="prev1" class="w-full h-full object-cover hidden" />
+                <span id="emptyLabel1" class="text-[11px] font-medium text-slate-500">Slot #2</span>
+              </div>
+              <div class="flex w-full gap-1">
+                <button onclick="capturePhoto(1)" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-md transition shadow-sm">
+                  Snap
+                </button>
+                <input type="file" id="photo1" accept="image/*" class="photo-input hidden" data-index="1" />
+                <button onclick="document.getElementById('photo1').click()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-md transition border border-slate-700">
+                  📁
+                </button>
+              </div>
             </div>
+
             <!-- Slot 3 -->
-            <div class="space-y-1">
-              <span class="block text-xs text-center text-gray-500">Foto #3</span>
-              <button onclick="capturePhoto(2)" class="w-full py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
-                📸 Snap 3
-              </button>
-              <input type="file" id="photo2" accept="image/*" class="photo-input hidden" data-index="2" />
-              <button onclick="document.getElementById('photo2').click()" class="w-full py-1 text-[11px] text-gray-500 hover:underline text-center block">
-                Upload
-              </button>
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-2.5 flex flex-col items-center space-y-2 relative group">
+              <div class="w-full aspect-[4/3] rounded-lg bg-slate-800 overflow-hidden relative border border-slate-700 flex items-center justify-center">
+                <img id="prev2" class="w-full h-full object-cover hidden" />
+                <span id="emptyLabel2" class="text-[11px] font-medium text-slate-500">Slot #3</span>
+              </div>
+              <div class="flex w-full gap-1">
+                <button onclick="capturePhoto(2)" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-md transition shadow-sm">
+                  Snap
+                </button>
+                <input type="file" id="photo2" accept="image/*" class="photo-input hidden" data-index="2" />
+                <button onclick="document.getElementById('photo2').click()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-md transition border border-slate-700">
+                  📁
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <hr class="border-gray-100" />
+        <!-- Frame & Customization Panel -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-5">
+          <h2 class="text-sm font-semibold text-slate-200">Kustomisasi Frame & Background</h2>
 
-        <!-- Custom Frame Overlay -->
-        <div class="space-y-2">
-          <label for="overlayInput" class="block text-sm font-medium text-gray-700">
-            3. Upload Custom Frame (PNG Transparan)
-          </label>
-          <input 
-            type="file" 
-            id="overlayInput" 
-            accept="image/png" 
-            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer border border-gray-200 rounded-xl"
-          />
-          <div id="overlayStatus" class="hidden flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs p-2.5 rounded-xl mt-2">
-            <span>✓ Custom Frame Aktif</span>
-            <button id="removeOverlayBtn" class="font-bold underline hover:text-emerald-900">Hapus Frame</button>
+          <!-- Frame Overlay Input -->
+          <div class="space-y-2">
+            <label class="block text-xs font-medium text-slate-400">Upload Custom Frame PNG (600 x 1800 px)</label>
+            <div class="relative">
+              <input 
+                type="file" 
+                id="overlayInput" 
+                accept="image/png" 
+                class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 transition cursor-pointer bg-slate-900 border border-slate-700 rounded-xl"
+              />
+            </div>
+            <div id="overlayStatus" class="hidden flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs p-2.5 rounded-xl">
+              <span class="flex items-center gap-1.5">✓ Overlay Frame PNG Aktif</span>
+              <button id="removeOverlayBtn" class="font-semibold underline hover:text-emerald-300 text-[11px]">Hapus</button>
+            </div>
+          </div>
+
+          <!-- Color Picker -->
+          <div class="space-y-2">
+            <label class="block text-xs font-medium text-slate-400">Warna Background Strip</label>
+            <div class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-2 rounded-xl">
+              <input type="color" id="bgColorInput" value="#ffffff" class="h-8 w-14 bg-transparent border-0 rounded cursor-pointer" />
+              <span id="colorHex" class="text-xs font-mono text-slate-300">#FFFFFF</span>
+            </div>
           </div>
         </div>
 
-        <!-- Background Color -->
-        <div class="space-y-2">
-          <label for="bgColorInput" class="block text-sm font-medium text-gray-700">
-            4. Warna Background Strip
-          </label>
-          <div class="flex items-center gap-3">
-            <input type="color" id="bgColorInput" value="#ffffff" class="h-10 w-20 p-1 border border-gray-200 rounded-xl cursor-pointer" />
-            <span id="colorHex" class="text-xs text-gray-500 font-mono">#FFFFFF</span>
-          </div>
-        </div>
-
-        <hr class="border-gray-100" />
-
-        <!-- Download Button -->
-        <button 
-          id="downloadBtn" 
-          class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 transition duration-200 flex items-center justify-center gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          Download Hasil Photobox
-        </button>
       </div>
 
-      <!-- Canvas Preview Area -->
-      <div class="lg:col-span-7 flex flex-col items-center justify-center bg-gray-200/50 p-6 rounded-2xl border border-dashed border-gray-300 min-h-[600px]">
-        <p class="text-xs text-gray-400 font-medium mb-3">CANVAS PREVIEW (600 x 1800 px)</p>
-        <canvas id="photoboxCanvas" width="600" height="1800" class="w-auto h-auto rounded-lg bg-white"></canvas>
+      <!-- Right Area: Interactive Canvas Studio Preview -->
+      <div class="lg:col-span-7 flex flex-col items-center justify-center bg-slate-950/60 border border-slate-800 rounded-2xl p-6 min-h-[750px] relative overflow-hidden backdrop-blur-sm">
+        
+        <!-- Canvas Toolbar -->
+        <div class="w-full flex justify-between items-center mb-4 text-xs text-slate-400 px-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Canvas Output: <strong>600 × 1800 px</strong></span>
+          </div>
+          <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
+            <button id="zoomOutBtn" class="px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300">-</button>
+            <span id="zoomLabel" class="px-2 font-mono text-slate-400">100%</span>
+            <button id="zoomInBtn" class="px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300">+</button>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="canvasWrapper" class="transition-transform duration-200 origin-top flex justify-center items-center">
+          <canvas id="photoboxCanvas" width="600" height="1800" class="w-auto max-h-[70vh] rounded-lg bg-white canvas-shadow border border-slate-700/50"></canvas>
+        </div>
+
       </div>
 
     </div>
   </main>
 
   <script>
-    // State Manager
+    // State Engine
     const state = {
       canvas: document.getElementById('photoboxCanvas'),
       ctx: document.getElementById('photoboxCanvas').getContext('2d'),
       photos: [null, null, null],
       overlayImage: null,
       bgColor: '#ffffff',
-      webcamStream: null
+      webcamStream: null,
+      zoomLevel: 1.0
     };
 
     // DOM Elements
@@ -161,6 +259,7 @@
     const startCamBtn = document.getElementById('startCamBtn');
     const cameraPlaceholder = document.getElementById('cameraPlaceholder');
     const countdownEl = document.getElementById('countdown');
+    const liveBadge = document.getElementById('liveBadge');
     const overlayInput = document.getElementById('overlayInput');
     const removeOverlayBtn = document.getElementById('removeOverlayBtn');
     const overlayStatus = document.getElementById('overlayStatus');
@@ -168,13 +267,17 @@
     const colorHex = document.getElementById('colorHex');
     const downloadBtn = document.getElementById('downloadBtn');
     const photoInputs = document.querySelectorAll('.photo-input');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomLabel = document.getElementById('zoomLabel');
 
-    // Initialize Canvas
+    // Init
     window.addEventListener('DOMContentLoaded', () => {
       renderCanvas();
     });
 
-    // 1. Live Camera Stream Handling
+    // 1. Live Webcam Handler
     startCamBtn.addEventListener('click', async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -184,16 +287,17 @@
         state.webcamStream = stream;
         video.srcObject = stream;
         cameraPlaceholder.classList.add('hidden');
-        startCamBtn.textContent = 'Kamera Aktif';
-        startCamBtn.classList.replace('bg-indigo-50', 'bg-emerald-50');
-        startCamBtn.classList.replace('text-indigo-600', 'text-emerald-600');
+        liveBadge.classList.replace('bg-slate-500', 'bg-emerald-500');
+        startCamBtn.innerHTML = `<span>Kamera Aktif</span>`;
+        startCamBtn.classList.replace('bg-slate-700', 'bg-emerald-500/20');
+        startCamBtn.classList.add('text-emerald-300', 'border-emerald-500/30');
       } catch (err) {
-        alert('Gagal mengakses kamera. Pastikan izin kamera telah diberikan.');
+        alert('Gagal mengakses kamera! Pastikan izin kamera telah diberikan pada browser.');
         console.error(err);
       }
     });
 
-    // 2. Capture Photo from Live Feed with 3s Countdown
+    // 2. Snap Photo with Timer
     function capturePhoto(slotIndex) {
       if (!state.webcamStream) {
         alert('Aktifkan kamera terlebih dahulu!');
@@ -212,13 +316,12 @@
           clearInterval(timer);
           countdownEl.classList.add('hidden');
           
-          // Take Snapshot from Video Frame
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = video.videoWidth || 640;
           tempCanvas.height = video.videoHeight || 480;
           const tempCtx = tempCanvas.getContext('2d');
 
-          // Mirror horizontally for selfie webcam
+          // Mirror horizontally for selfie
           tempCtx.translate(tempCanvas.width, 0);
           tempCtx.scale(-1, 1);
           tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
@@ -226,6 +329,7 @@
           const img = new Image();
           img.onload = () => {
             state.photos[slotIndex] = img;
+            updateSlotUI(slotIndex, tempCanvas.toDataURL('image/png'));
             renderCanvas();
           };
           img.src = tempCanvas.toDataURL('image/png');
@@ -233,7 +337,17 @@
       }, 1000);
     }
 
-    // 3. Handler Upload File Photo Manual
+    // Update Slot Card Preview UI
+    function updateSlotUI(index, src) {
+      const prevImg = document.getElementById(`prev${index}`);
+      const emptyLabel = document.getElementById(`emptyLabel${index}`);
+      
+      prevImg.src = src;
+      prevImg.classList.remove('hidden');
+      emptyLabel.classList.add('hidden');
+    }
+
+    // 3. Manual File Upload Handler
     photoInputs.forEach((input) => {
       input.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -245,6 +359,7 @@
           const img = new Image();
           img.onload = () => {
             state.photos[index] = img;
+            updateSlotUI(index, event.target.result);
             renderCanvas();
           };
           img.src = event.target.result;
@@ -253,13 +368,13 @@
       });
     });
 
-    // 4. Handler Custom PNG Frame Overlay
+    // 4. PNG Frame Overlay Reader
     overlayInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       if (file.type !== 'image/png') {
-        alert('Harap unggah file PNG transparan!');
+        alert('Format file harus PNG transparan!');
         overlayInput.value = '';
         return;
       }
@@ -284,14 +399,14 @@
       renderCanvas();
     });
 
-    // 5. Background Color Input
+    // 5. Background Color Change
     bgColorInput.addEventListener('input', (e) => {
       state.bgColor = e.target.value;
       colorHex.textContent = e.target.value.toUpperCase();
       renderCanvas();
     });
 
-    // 6. Core Render Engine Canvas
+    // 6. Canvas Render Engine
     function renderCanvas() {
       const { canvas, ctx, photos, overlayImage, bgColor } = state;
 
@@ -300,7 +415,7 @@
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Layer 2: Photos Grid (3 Slot Vertikal)
+      // Layer 2: Photos Grid (3 Slot Layout Vertikal)
       const photoWidth = 520;
       const photoHeight = 390;
       const startX = 40;
@@ -313,23 +428,24 @@
         if (img) {
           drawCoverImage(ctx, img, startX, currentY, photoWidth, photoHeight);
         } else {
-          // Placeholder Box
-          ctx.fillStyle = '#f3f4f6';
+          // Placeholder Box saat slot kosong
+          ctx.fillStyle = '#f1f5f9';
           ctx.fillRect(startX, currentY, photoWidth, photoHeight);
-          ctx.fillStyle = '#9ca3af';
-          ctx.font = '24px sans-serif';
+          
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(`Slot Foto #${idx + 1}`, canvas.width / 2, currentY + photoHeight / 2);
+          ctx.fillText(`Foto #${idx + 1}`, canvas.width / 2, currentY + photoHeight / 2);
         }
       });
 
-      // Layer 3: Custom Frame PNG Overlay (Berada di Atas Layer Foto)
+      // Layer 3: Custom Overlay PNG Frame (Di Atas Foto)
       if (overlayImage) {
         ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
       }
     }
 
-    // Fit Crop & Center Foto ke Box Slot
+    // Crop Image with Object-Fit Cover Logic
     function drawCoverImage(ctx, img, x, y, w, h) {
       const imgRatio = img.width / img.height;
       const targetRatio = w / h;
@@ -350,7 +466,27 @@
       ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     }
 
-    // 7. Download Final Canvas
+    // 7. Zoom Control Engine
+    zoomInBtn.addEventListener('click', () => {
+      if (state.zoomLevel < 1.5) {
+        state.zoomLevel += 0.1;
+        applyZoom();
+      }
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+      if (state.zoomLevel > 0.6) {
+        state.zoomLevel -= 0.1;
+        applyZoom();
+      }
+    });
+
+    function applyZoom() {
+      canvasWrapper.style.transform = `scale(${state.zoomLevel})`;
+      zoomLabel.textContent = `${Math.round(state.zoomLevel * 100)}%`;
+    }
+
+    // 8. Download PNG
     downloadBtn.addEventListener('click', () => {
       const link = document.createElement('a');
       link.download = `SNAP_Studio_${Date.now()}.png`;
