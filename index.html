@@ -133,6 +133,16 @@
             <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl group">
                 <!-- Video Feed -->
                 <video id="videoFeed" class="w-full h-full object-cover filter-original -scale-x-100 transition-all duration-300" autoplay playsinline muted></video>
+
+<button id="switchCameraBtn" type="button"
+  style="margin:6px 0;padding:10px 14px;border:1px solid #ddd;border-radius:12px;
+  background:#fff;font-weight:700;cursor:pointer;">
+  🔄 Balik Kamera
+</button>
+<div id="cameraModeStatus" style="font-size:12px;color:#777;margin:4px 0 10px;">
+  Kamera depan
+</div>
+
                 
                 <!-- Video Stream Error / Off Placeholder -->
                 <div id="cameraPlaceholder" class="hidden absolute inset-0 flex-col items-center justify-center gap-3 text-slate-500 bg-slate-950 p-6 text-center">
@@ -927,6 +937,252 @@
             renderThumbnails();
             renderStripCanvas();
         });
-    </script>
+    
+// ======================================================
+// AUTO QR HASIL PHOTOSTRIP
+// ======================================================
+(function () {
+  const modal = document.getElementById("autoQrModal");
+  const qrBox = document.getElementById("autoQrCode");
+  const openBtn = document.getElementById("autoQrOpenBtn");
+  const closeBtn = document.getElementById("autoQrCloseBtn");
+
+  let latestPhotoUrl = "";
+
+  function makeAutoQR(photoUrl) {
+    if (!modal || !qrBox || !photoUrl) return;
+
+    latestPhotoUrl = photoUrl;
+    qrBox.innerHTML = "";
+
+    if (typeof QRCode === "undefined") {
+      qrBox.innerHTML =
+        '<div style="padding:20px;color:#b00;font-size:13px;">' +
+        'QR library belum termuat. Pastikan internet aktif saat membuka halaman.' +
+        '</div>';
+      modal.style.display = "flex";
+      return;
+    }
+
+    try {
+      new QRCode(qrBox, {
+        text: photoUrl,
+        width: 220,
+        height: 220,
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      modal.style.display = "flex";
+    } catch (e) {
+      console.error("Auto QR error:", e);
+    }
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+  }
+
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      if (latestPhotoUrl) window.open(latestPhotoUrl, "_blank");
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.style.display = "none";
+    });
+  }
+
+  // Fungsi global: panggil setelah photostrip selesai dirender.
+  window.showAutoPhotoQR = function () {
+    const canvas =
+      document.getElementById("stripCanvas") ||
+      document.querySelector("canvas");
+
+    if (!canvas) {
+      alert("Photostrip belum tersedia.");
+      return;
+    }
+
+    try {
+      const photoUrl = canvas.toDataURL("image/jpeg", 0.92);
+      makeAutoQR(photoUrl);
+    } catch (e) {
+      console.error("Gagal membuat QR hasil foto:", e);
+      alert("QR hasil foto tidak dapat dibuat.");
+    }
+  };
+})();
+
+</script>
+
+<!-- AUTO QR HASIL FOTO -->
+<div id="autoQrModal" style="
+  display:none; position:fixed; inset:0; z-index:99999;
+  background:rgba(0,0,0,.72); align-items:center; justify-content:center;
+  padding:20px;">
+  <div style="
+    width:min(92vw,420px); background:#fff; border-radius:24px;
+    padding:24px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.35);">
+    <div style="font-size:28px;font-weight:800;margin-bottom:6px;">📸 Foto Kamu Siap!</div>
+    <div style="font-size:14px;color:#666;margin-bottom:16px;">
+      Scan QR ini dari HP untuk membuka hasil photostrip.
+    </div>
+    <div id="autoQrCode" style="
+      width:220px;height:220px;margin:0 auto 16px;
+      display:flex;align-items:center;justify-content:center;"></div>
+    <button id="autoQrOpenBtn" type="button" style="
+      border:0;border-radius:12px;padding:11px 16px;
+      background:#111;color:#fff;font-weight:700;margin:4px;cursor:pointer;">
+      Buka Hasil Foto
+    </button>
+    <button id="autoQrCloseBtn" type="button" style="
+      border:1px solid #ddd;border-radius:12px;padding:11px 16px;
+      background:#fff;color:#111;font-weight:700;margin:4px;cursor:pointer;">
+      Tutup
+    </button>
+    <div style="font-size:11px;color:#888;margin-top:12px;">
+      Catatan: QR otomatis menggunakan data foto dari browser ini.
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function () {
+  if (typeof window.renderStripCanvas === "function" && !window.__autoQrWrapped) {
+    const originalRenderStripCanvas = window.renderStripCanvas;
+    window.renderStripCanvas = function () {
+      const result = originalRenderStripCanvas.apply(this, arguments);
+      setTimeout(() => {
+        if (typeof window.showAutoPhotoQR === "function") {
+          window.showAutoPhotoQR();
+        }
+      }, 500);
+      return result;
+    };
+    window.__autoQrWrapped = true;
+  }
+})();
+
+// ======================================================
+// SWITCH CAMERA: DEPAN <-> BELAKANG
+// ======================================================
+(function () {
+  const video = document.getElementById("videoFeed");
+  const switchBtn = document.getElementById("switchCameraBtn");
+  const modeStatus = document.getElementById("cameraModeStatus");
+
+  if (!video || !switchBtn) return;
+
+  let cameraFacing = "user";
+  let cameraStream = null;
+
+  async function stopCameraStream() {
+    const stream = video.srcObject || cameraStream;
+    if (stream && stream.getTracks) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    video.srcObject = null;
+    cameraStream = null;
+  }
+
+  async function startSelectedCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Browser ini tidak mendukung akses kamera.");
+      return false;
+    }
+
+    await stopCameraStream();
+
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { exact: cameraFacing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      video.srcObject = cameraStream;
+      video.setAttribute("playsinline", "");
+      video.muted = true;
+
+      await video.play();
+
+      if (modeStatus) {
+        modeStatus.textContent =
+          cameraFacing === "user" ? "Kamera depan" : "Kamera belakang";
+      }
+
+      return true;
+    } catch (err) {
+      console.warn("Exact facingMode gagal, mencoba kamera umum:", err);
+
+      // Some laptops/browsers do not support exact facingMode.
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+
+        video.srcObject = cameraStream;
+        video.setAttribute("playsinline", "");
+        video.muted = true;
+        await video.play();
+
+        if (modeStatus) {
+          modeStatus.textContent = "Kamera aktif";
+        }
+        return true;
+      } catch (err2) {
+        console.error("Camera error:", err2);
+        alert(
+          "Kamera tidak dapat diakses. Pastikan izin kamera sudah diberikan."
+        );
+        return false;
+      }
+    }
+  }
+
+  switchBtn.addEventListener("click", async function () {
+    switchBtn.disabled = true;
+    switchBtn.style.opacity = "0.6";
+
+    cameraFacing = cameraFacing === "user" ? "environment" : "user";
+    await startSelectedCamera();
+
+    switchBtn.disabled = false;
+    switchBtn.style.opacity = "1";
+  });
+
+  // Expose function so existing camera code can use the same stream.
+  window.harUSnapStartCamera = startSelectedCamera;
+  window.harUSnapStopCamera = stopCameraStream;
+  window.harUSnapGetCameraFacing = () => cameraFacing;
+
+  // Do not automatically start a second camera if the existing app already
+  // initialized one. The button will switch the currently active camera.
+})();
+
+
+// Safer capture dimensions for camera switching
+(function () {
+  const video = document.getElementById("videoFeed");
+  if (!video) return;
+
+  window.harUSnapGetVideoSize = function () {
+    return {
+      width: video.videoWidth || 1280,
+      height: video.videoHeight || 720
+    };
+  };
+})();
+
+</script>
+
 </body>
 </html>
