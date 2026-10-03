@@ -404,19 +404,28 @@
         const generateQrBtn = document.getElementById('generateQrBtn');
         const qrCodeBox = document.getElementById('qrCodeBox');
 
-        let audioCtx = null, musicTimer = null, musicPlaying = false, musicGain = null, musicStep = 0;
+        const boothMusic = new Audio('music.mp3');
+        boothMusic.loop = true;
+        boothMusic.preload = 'auto';
+        boothMusic.volume = parseFloat(musicVolume.value);
+        let musicPlaying = false;
         function startBoothMusic() {
-            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); musicGain = audioCtx.createGain(); musicGain.gain.value = parseFloat(musicVolume.value); musicGain.connect(audioCtx.destination); }
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (musicPlaying) return;
-            musicPlaying = true; musicStatus.textContent='Music ON'; musicIcon.className='fa-solid fa-pause';
-            const notes=[261.63,329.63,392,329.63,293.66,349.23,440,349.23];
-            function playNote(){ if(!musicPlaying)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=notes[musicStep++%notes.length]; g.gain.setValueAtTime(.0001,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.045,audioCtx.currentTime+.03); g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.38); o.connect(g);g.connect(musicGain);o.start();o.stop(audioCtx.currentTime+.4);musicTimer=setTimeout(playNote,430); }
-            playNote();
+            boothMusic.play().then(() => {
+                musicPlaying = true;
+                musicStatus.textContent = 'Music ON';
+                musicIcon.className = 'fa-solid fa-pause';
+            }).catch(() => {
+                musicStatus.textContent = 'Klik Play untuk musik';
+            });
         }
-        function stopBoothMusic(){musicPlaying=false;clearTimeout(musicTimer);musicTimer=null;musicStatus.textContent='Music OFF';musicIcon.className='fa-solid fa-play';}
+        function stopBoothMusic(){
+            boothMusic.pause();
+            musicPlaying = false;
+            musicStatus.textContent='Music OFF';
+            musicIcon.className='fa-solid fa-play';
+        }
         musicToggleBtn.addEventListener('click',()=>musicPlaying?stopBoothMusic():startBoothMusic());
-        musicVolume.addEventListener('input',()=>{if(musicGain)musicGain.gain.value=parseFloat(musicVolume.value);});
+        musicVolume.addEventListener('input',()=>{boothMusic.volume=parseFloat(musicVolume.value);});
         function generateQRCode(){const v=qrUrlInput.value.trim();qrCodeBox.innerHTML='';if(!v){qrCodeBox.innerHTML='<span class="text-slate-400 text-[10px] text-center">Masukkan URL<br>terlebih dahulu</span>';return;}new QRCode(qrCodeBox,{text:v,width:120,height:120,colorDark:'#111827',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}
         generateQrBtn.addEventListener('click',generateQRCode);
         qrUrlInput.addEventListener('keydown',e=>{if(e.key==='Enter')generateQRCode();});
