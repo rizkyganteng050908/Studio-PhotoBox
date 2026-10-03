@@ -1,675 +1,906 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SNAP Studio - Ultimate Photobox Experience</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts Inter & Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
-  
-  <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .font-brand {
-      font-family: 'Pacifico', cursive;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HARU SNAP • Aesthetic Korean Studio Photobooth • Filters & Backgrounds</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans & Caveat -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-
-    .canvas-shadow {
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-    }
-
-    /* Camera Flash Effect */
-    @keyframes flash-animation {
-      0% { opacity: 0.9; }
-      100% { opacity: 0; }
-    }
-    .flash-active {
-      animation: flash-animation 0.4s ease-out forwards;
-    }
-
-    /* CSS Filters for Live Camera Preview */
-    .filter-none { filter: none; }
-    .filter-bw { filter: grayscale(100%) contrast(110%); }
-    .filter-sepia { filter: sepia(80%) contrast(95%); }
-    .filter-vintage { filter: sepia(30%) contrast(110%) brightness(90%) saturate(130%); }
-    .filter-warm { filter: sepia(20%) saturate(140%) hue-rotate(-10deg); }
-    .filter-cool { filter: saturate(120%) hue-rotate(10deg) brightness(105%); }
-  </style>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen antialiased flex flex-col">
-
-  <!-- Screen Flash Effect Overlay -->
-  <div id="flashOverlay" class="fixed inset-0 bg-white pointer-events-none z-[100] opacity-0"></div>
-
-  <!-- Header Navigation -->
-  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md px-6 py-4">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            SNAP Studio 
-            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-full">Ultimate Pro</span>
-          </h1>
-          <p class="text-xs text-slate-400">Custom Filters, Dynamic Slots & Text Branding Engine</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-4">
-        <button id="downloadBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 flex items-center gap-2 active:scale-95">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          Export Photobox
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start h-full">
-      
-      <!-- Left Sidebar: Controls -->
-      <div class="lg:col-span-5 space-y-6">
-        
-        <!-- Camera Live Viewfinder Card -->
-        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <span id="liveBadge" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
-              <h2 class="text-sm font-semibold text-slate-200">Live Viewfinder</h2>
-            </div>
-            <button id="startCamBtn" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-lg transition border border-slate-600 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-              <span>Mulai Kamera</span>
-            </button>
-          </div>
-
-          <!-- Video Container -->
-          <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80">
-            <video id="webcam" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100 filter-none transition-all duration-300"></video>
-            
-            <!-- Grid Lines -->
-            <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
-              <div class="border-r border-b border-white"></div>
-              <div class="border-r border-b border-white"></div>
-              <div class="border-b border-white"></div>
-              <div class="border-r border-b border-white"></div>
-              <div class="border-r border-b border-white"></div>
-              <div class="border-b border-white"></div>
-              <div class="border-r border-white"></div>
-              <div class="border-r border-white"></div>
-              <div></div>
-            </div>
-
-            <!-- Standby Placeholder -->
-            <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-slate-400 p-6 text-center space-y-3">
-              <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </div>
-              <p class="text-xs text-slate-400">Klik <strong>Mulai Kamera</strong> untuk mengaktifkan webcam.</p>
-            </div>
-
-            <!-- Countdown Overlay -->
-            <div id="countdown" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md text-white flex flex-col items-center justify-center space-y-2">
-              <span id="slotIndicator" class="text-xs font-semibold uppercase tracking-widest text-indigo-400">FOTO #1</span>
-              <span id="timerNumber" class="font-extrabold text-7xl text-indigo-400 animate-pulse">3</span>
-            </div>
-          </div>
-
-          <!-- Controls Bar (Timer & Burst) -->
-          <div class="flex gap-2">
-            <div class="w-1/3">
-              <select id="timerDelaySelect" class="w-full h-full bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 px-3 py-2.5 font-medium focus:outline-none focus:border-indigo-500">
-                <option value="3">Timer: 3dtk</option>
-                <option value="5">Timer: 5dtk</option>
-                <option value="7">Timer: 7dtk</option>
-              </select>
-            </div>
-            <button id="snapAllBtn" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <span>Ambil Semua Foto (Auto)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter & Layout Customization -->
-        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
-          <h2 class="text-sm font-semibold text-slate-200">Efek Filter & Mode Layout</h2>
-          
-          <!-- Filter Select Buttons -->
-          <div class="space-y-2">
-            <label class="block text-xs font-medium text-slate-400">Pilih Filter Kamera & Foto</label>
-            <div class="grid grid-cols-3 gap-2 text-xs">
-              <button onclick="setFilter('none')" class="filter-btn py-2 bg-indigo-600 border border-indigo-500 text-white font-medium rounded-lg transition" data-filter="none">Normal</button>
-              <button onclick="setFilter('bw')" class="filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition" data-filter="bw">B & W</button>
-              <button onclick="setFilter('sepia')" class="filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition" data-filter="sepia">Sepia</button>
-              <button onclick="setFilter('vintage')" class="filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition" data-filter="vintage">Vintage</button>
-              <button onclick="setFilter('warm')" class="filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition" data-filter="warm">Warm</button>
-              <button onclick="setFilter('cool')" class="filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition" data-filter="cool">Cool</button>
-            </div>
-          </div>
-
-          <!-- Slot Layout Select -->
-          <div class="space-y-2 pt-2 border-t border-slate-700/50">
-            <label class="block text-xs font-medium text-slate-400">Jumlah Frame Slot</label>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <button id="layout3Btn" onclick="setLayout(3)" class="py-2 bg-indigo-600 border border-indigo-500 text-white font-semibold rounded-lg transition">3 Frame Slot</button>
-              <button id="layout4Btn" onclick="setLayout(4)" class="py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold rounded-lg transition">4 Frame Slot</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Photo Slots Grid Dynamic -->
-        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
-          <div class="flex justify-between items-center">
-            <h2 class="text-sm font-semibold text-slate-200">Manajemen Slot Foto</h2>
-            <span id="slotCountLabel" class="text-xs text-slate-400">3 Slot Aktif</span>
-          </div>
-
-          <div id="slotsContainer" class="grid grid-cols-3 gap-3">
-            <!-- Slot Cards rendered via JS -->
-          </div>
-        </div>
-
-        <!-- Branding & Custom Frame Settings -->
-        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-xl shadow-xl space-y-4">
-          <h2 class="text-sm font-semibold text-slate-200">Watermark & Frame Design</h2>
-
-          <!-- Watermark Text -->
-          <div class="space-y-2">
-            <label class="block text-xs font-medium text-slate-400">Teks Branding Bawah Canvas</label>
-            <input type="text" id="watermarkInput" placeholder="Contoh: SNAP Studio • 2026" value="SNAP STUDIO" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
-          </div>
-
-          <!-- Background Color -->
-          <div class="space-y-2">
-            <label class="block text-xs font-medium text-slate-400">Warna Background Strip</label>
-            <div class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-2 rounded-xl">
-              <input type="color" id="bgColorInput" value="#ffffff" class="h-8 w-14 bg-transparent border-0 rounded cursor-pointer" />
-              <span id="colorHex" class="text-xs font-mono text-slate-300">#FFFFFF</span>
-            </div>
-          </div>
-
-          <!-- Overlay Frame PNG -->
-          <div class="space-y-2">
-            <label class="block text-xs font-medium text-slate-400">Custom Frame PNG Overlay (600x1800)</label>
-            <input type="file" id="overlayInput" accept="image/png" class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 transition cursor-pointer bg-slate-900 border border-slate-700 rounded-xl" />
-            <div id="overlayStatus" class="hidden flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs p-2.5 rounded-xl">
-              <span class="flex items-center gap-1.5">✓ Overlay Frame PNG Aktif</span>
-              <button id="removeOverlayBtn" class="font-semibold underline hover:text-emerald-300 text-[11px]">Hapus</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Right Area: Interactive Canvas Studio Preview -->
-      <div class="lg:col-span-7 flex flex-col items-center justify-center bg-slate-950/60 border border-slate-800 rounded-2xl p-6 min-h-[780px] relative overflow-hidden backdrop-blur-sm">
-        
-        <div class="w-full flex justify-between items-center mb-4 text-xs text-slate-400 px-2">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>Canvas Output: <strong>600 × 1800 px</strong></span>
-          </div>
-          <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
-            <button id="zoomOutBtn" class="px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300">-</button>
-            <span id="zoomLabel" class="px-2 font-mono text-slate-400">100%</span>
-            <button id="zoomInBtn" class="px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300">+</button>
-          </div>
-        </div>
-
-        <div id="canvasWrapper" class="transition-transform duration-200 origin-top flex justify-center items-center">
-          <canvas id="photoboxCanvas" width="600" height="1800" class="w-auto max-h-[75vh] rounded-lg bg-white canvas-shadow border border-slate-700/50"></canvas>
-        </div>
-
-      </div>
-
-    </div>
-  </main>
-
-  <script>
-    // App State Engine
-    const state = {
-      canvas: document.getElementById('photoboxCanvas'),
-      ctx: document.getElementById('photoboxCanvas').getContext('2d'),
-      slotCount: 3,
-      photos: [null, null, null, null],
-      activeFilter: 'none',
-      overlayImage: null,
-      bgColor: '#ffffff',
-      watermarkText: 'SNAP STUDIO',
-      webcamStream: null,
-      zoomLevel: 1.0,
-      isCapturingSession: false
-    };
-
-    // DOM Elements
-    const video = document.getElementById('webcam');
-    const startCamBtn = document.getElementById('startCamBtn');
-    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-    const countdownEl = document.getElementById('countdown');
-    const timerNumber = document.getElementById('timerNumber');
-    const slotIndicator = document.getElementById('slotIndicator');
-    const snapAllBtn = document.getElementById('snapAllBtn');
-    const timerDelaySelect = document.getElementById('timerDelaySelect');
-    const liveBadge = document.getElementById('liveBadge');
-    const slotsContainer = document.getElementById('slotsContainer');
-    const slotCountLabel = document.getElementById('slotCountLabel');
-    const watermarkInput = document.getElementById('watermarkInput');
-    const overlayInput = document.getElementById('overlayInput');
-    const removeOverlayBtn = document.getElementById('removeOverlayBtn');
-    const overlayStatus = document.getElementById('overlayStatus');
-    const bgColorInput = document.getElementById('bgColorInput');
-    const colorHex = document.getElementById('colorHex');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const canvasWrapper = document.getElementById('canvasWrapper');
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    const zoomLabel = document.getElementById('zoomLabel');
-    const flashOverlay = document.getElementById('flashOverlay');
-
-    window.addEventListener('DOMContentLoaded', () => {
-      renderSlotsUI();
-      renderCanvas();
-    });
-
-    // 1. Live Camera Handler
-    startCamBtn.addEventListener('click', async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-          audio: false
-        });
-        state.webcamStream = stream;
-        video.srcObject = stream;
-        cameraPlaceholder.classList.add('hidden');
-        liveBadge.classList.replace('bg-slate-500', 'bg-emerald-500');
-        startCamBtn.innerHTML = `<span>Kamera Aktif</span>`;
-        startCamBtn.classList.replace('bg-slate-700', 'bg-emerald-500/20');
-        startCamBtn.classList.add('text-emerald-300', 'border-emerald-500/30');
-      } catch (err) {
-        alert('Gagal mengakses kamera! Pastikan izin kamera telah diberikan.');
-        console.error(err);
-      }
-    });
-
-    // 2. Filter Engine
-    function setFilter(filterName) {
-      state.activeFilter = filterName;
-      video.className = `w-full h-full object-cover transform -scale-x-100 transition-all duration-300 filter-${filterName}`;
-      
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        if (btn.dataset.filter === filterName) {
-          btn.className = 'filter-btn py-2 bg-indigo-600 border border-indigo-500 text-white font-medium rounded-lg transition';
-        } else {
-          btn.className = 'filter-btn py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-medium rounded-lg transition';
+    <style>
+        :root {
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-hand: 'Caveat', cursive;
         }
-      });
 
-      renderCanvas();
-    }
+        body {
+            font-family: var(--font-sans);
+            background-color: #0d0f12;
+            color: #e2e8f0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
 
-    // 3. Dynamic Slot Layout Engine (3 or 4 slots)
-    function setLayout(count) {
-      state.slotCount = count;
-      slotCountLabel.textContent = `${count} Slot Aktif`;
-      
-      const btn3 = document.getElementById('layout3Btn');
-      const btn4 = document.getElementById('layout4Btn');
-      
-      if (count === 3) {
-        btn3.className = 'py-2 bg-indigo-600 border border-indigo-500 text-white font-semibold rounded-lg transition';
-        btn4.className = 'py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold rounded-lg transition';
-        slotsContainer.className = 'grid grid-cols-3 gap-3';
-      } else {
-        btn4.className = 'py-2 bg-indigo-600 border border-indigo-500 text-white font-semibold rounded-lg transition';
-        btn3.className = 'py-2 bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold rounded-lg transition';
-        slotsContainer.className = 'grid grid-cols-2 gap-3';
-      }
+        .font-handwriting {
+            font-family: var(--font-hand);
+        }
 
-      renderSlotsUI();
-      renderCanvas();
-    }
+        /* Subtle Noise Overlay */
+        .noise-bg {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+        }
 
-    // Render Slots UI Cards
-    function renderSlotsUI() {
-      slotsContainer.innerHTML = '';
-      for (let i = 0; i < state.slotCount; i++) {
-        const hasPhoto = state.photos[i] !== null;
-        const card = document.createElement('div');
-        card.className = 'bg-slate-900/80 border border-slate-700/80 rounded-xl p-2 flex flex-col items-center space-y-2 relative';
-        card.innerHTML = `
-          <div class="w-full aspect-[4/3] rounded-lg bg-slate-800 overflow-hidden relative border border-slate-700 flex items-center justify-center">
-            <img id="prev${i}" src="${hasPhoto ? state.photos[i].src : ''}" class="w-full h-full object-cover ${hasPhoto ? '' : 'hidden'}" />
-            <span id="emptyLabel${i}" class="text-[11px] font-medium text-slate-500 ${hasPhoto ? 'hidden' : ''}">Slot #${i+1}</span>
-          </div>
-          <div class="flex w-full gap-1">
-            <button onclick="captureSinglePhoto(${i})" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-medium rounded transition border border-slate-700">
-              Ulang
+        /* Camera Live Filters */
+        .filter-original { filter: none; }
+        .filter-film { filter: contrast(108%) brightness(102%) saturate(85%) sepia(10%); }
+        .filter-bw { filter: grayscale(100%) contrast(125%) brightness(95%); }
+        .filter-warm { filter: sepia(25%) saturate(130%) brightness(105%) hue-rotate(-10deg); }
+        .filter-cyber { filter: contrast(130%) hue-rotate(190deg) saturate(180%); }
+        .filter-soft { filter: brightness(110%) contrast(90%) saturate(115%); }
+        .filter-fade { filter: brightness(105%) contrast(88%) saturate(82%) sepia(8%); }
+        .filter-vintage { filter: contrast(112%) brightness(98%) saturate(72%) sepia(18%); }
+        .filter-cool { filter: contrast(105%) brightness(103%) saturate(95%) hue-rotate(8deg); }
+
+        /* Photobooth Background Presets */
+        .bg-thumb {
+            position: relative;
+            overflow: hidden;
+        }
+        .bg-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .35;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.65), transparent 35%);
+        }
+
+        /* Tactile UI Elements */
+        .glass-panel {
+            background: rgba(22, 26, 33, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-tactile {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .btn-tactile:active {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Flash overlay animation */
+        @keyframes studioFlash {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .flash-active {
+            animation: studioFlash 0.35s ease-out forwards;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body class="min-h-screen noise-bg flex flex-col justify-between selection:bg-pink-500/30 selection:text-pink-200">
+
+    <!-- Top Navigation -->
+    <header class="w-full glass-panel sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-pink-400 via-rose-300 to-indigo-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-pink-500/10">
+                <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center text-rose-300">
+                    <i class="fa-solid fa-camera text-sm"></i>
+                </div>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-rose-400 tracking-widest uppercase block -mb-1">하루 스튜디오</span>
+                <h1 class="text-base font-bold text-slate-100 tracking-tight">HARU SNAP <span class="text-xs font-normal text-slate-400 ml-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10">v2.4 Booth</span></h1>
+            </div>
+        </div>
+
+        <!-- Mode Toggle & Camera Mirror -->
+        <div class="flex items-center gap-3">
+            <button id="mirrorToggleBtn" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 transition flex items-center gap-2">
+                <i class="fa-solid fa-right-left text-[10px]"></i> Mirror <span id="mirrorStateText" class="text-rose-400 font-medium">ON</span>
             </button>
-            <input type="file" id="photo${i}" accept="image/*" class="photo-input hidden" onchange="handleFileUpload(event, ${i})" />
-            <button onclick="document.getElementById('photo${i}').click()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] rounded transition border border-slate-700">
-              📁
-            </button>
-          </div>
-        `;
-        slotsContainer.appendChild(card);
-      }
-    }
+            <div class="h-4 w-[1px] bg-white/10"></div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Live Feed</span>
+            </div>
+        </div>
+    </header>
 
-    // 4. Sequential Auto-Burst Capture Engine
-    snapAllBtn.addEventListener('click', async () => {
-      if (!state.webcamStream) {
-        alert('Aktifkan kamera terlebih dahulu!');
-        return;
-      }
-      if (state.isCapturingSession) return;
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT PANEL: Camera Feed & Settings (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+            <!-- Camera Viewport Box -->
+            <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl group">
+                <!-- Video Feed -->
+                <video id="videoFeed" class="w-full h-full object-cover filter-original -scale-x-100 transition-all duration-300" autoplay playsinline muted></video>
+                
+                <!-- Video Stream Error / Off Placeholder -->
+                <div id="cameraPlaceholder" class="hidden absolute inset-0 flex-col items-center justify-center gap-3 text-slate-500 bg-slate-950 p-6 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-2xl text-slate-400 mb-1">
+                        <i class="fa-solid fa-video-slash"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-300">Webcam Permission Required</p>
+                    <p class="text-xs text-slate-500 max-w-xs">Please grant camera access to use the live studio photobooth.</p>
+                     <button id="retryCameraBtn" class="mt-2 px-4 py-2 rounded-xl bg-rose-400 text-slate-950 text-xs font-bold hover:bg-rose-300">Try Camera Again</button>
+                </div>
 
-      state.isCapturingSession = true;
-      snapAllBtn.disabled = true;
-      snapAllBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                <!-- Live Countdown Overlay -->
+                <div id="countdownOverlay" class="hidden absolute inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-20">
+                    <div class="relative flex items-center justify-center">
+                        <span id="countdownText" class="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-pink-300 via-rose-200 to-indigo-200 drop-shadow-2xl">3</span>
+                    </div>
+                </div>
 
-      const delay = parseInt(timerDelaySelect.value) || 3;
+                <!-- Screen Flash Animation -->
+                <div id="flashOverlay" class="pointer-events-none absolute inset-0 bg-white opacity-0 z-30"></div>
 
-      for (let i = 0; i < state.slotCount; i++) {
-        await captureWithCountdown(i, delay);
-      }
+                <!-- Live Filter Pill Badge -->
+                <div class="absolute top-4 left-4 z-10 glass-panel px-3.5 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                    <span id="currentFilterLabel" class="text-xs font-semibold text-slate-200">Original</span>
+                </div>
 
-      state.isCapturingSession = false;
-      snapAllBtn.disabled = false;
-      snapAllBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    });
+                <!-- Shots Counter -->
+                <div class="absolute top-4 right-4 z-10 glass-panel px-3.5 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                    <i class="fa-regular fa-image text-xs text-pink-400"></i>
+                    <span class="text-xs font-bold text-slate-200"><span id="shotCountNum" class="text-pink-400">0</span>/4</span>
+                </div>
+            </div>
 
-    function captureSinglePhoto(slotIndex) {
-      if (!state.webcamStream) {
-        alert('Aktifkan kamera terlebih dahulu!');
-        return;
-      }
-      if (state.isCapturingSession) return;
+            <!-- Photobooth Capture Controls -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col gap-5 border border-white/10">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Layout Mode Selector -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Layout</label>
+                        <div class="grid grid-cols-2 gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/5" id="layoutToggle">
+                            <button data-layout="strip" class="layout-btn active py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-white/10 transition">Strip</button>
+                            <button data-layout="grid" class="layout-btn py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition">Quad</button>
+                        </div>
+                    </div>
 
-      const delay = parseInt(timerDelaySelect.value) || 3;
-      captureWithCountdown(slotIndex, delay);
-    }
+                    <!-- Sequence Mode Selector -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Mode</label>
+                        <div class="grid grid-cols-2 gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/5" id="modeToggle">
+                            <button data-mode="auto" class="mode-btn active py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-white/10 transition">Auto 4x</button>
+                            <button data-mode="manual" class="mode-btn py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition">Single</button>
+                        </div>
+                    </div>
 
-    function captureWithCountdown(slotIndex, seconds) {
-      return new Promise((resolve) => {
-        let count = seconds;
-        slotIndicator.textContent = `FOTO #${slotIndex + 1} DARI ${state.slotCount}`;
-        timerNumber.textContent = count;
-        countdownEl.classList.remove('hidden');
+                    <!-- Countdown Timer Select -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Timer</label>
+                        <select id="timerSelect" class="w-full bg-slate-900/80 border border-white/10 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-rose-400/50">
+                            <option value="3">3 Seconds</option>
+                            <option value="5">5 Seconds</option>
+                            <option value="10">10 Seconds</option>
+                        </select>
+                    </div>
 
-        const interval = setInterval(() => {
-          count--;
-          if (count > 0) {
-            timerNumber.textContent = count;
-          } else {
-            clearInterval(interval);
-            
-            // Trigger Camera Screen Flash Effect
-            triggerFlash();
-            takeSnap(slotIndex);
+                    <!-- Live Filters Select -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Film Tone</label>
+                        <select id="filterSelect" class="w-full bg-slate-900/80 border border-white/10 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-rose-400/50">
+                            <option value="filter-original">Natural Clean</option>
+                            <option value="filter-film">Korean Warm Film</option>
+                            <option value="filter-soft">Soft Pastel</option>
+                            <option value="filter-bw">Noir High Contrast</option>
+                            <option value="filter-warm">Sunset Bloom</option>
+                            <option value="filter-cyber">Neon Glow</option>
+                            <option value="filter-fade">Dreamy Fade</option>
+                            <option value="filter-vintage">Retro Vintage</option>
+                            <option value="filter-cool">Cool Studio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Capture Buttons -->
+                <div class="flex gap-3">
+                    <button id="snapBtn" class="btn-tactile flex-1 bg-gradient-to-r from-rose-400 via-pink-400 to-indigo-400 hover:from-rose-500 hover:to-indigo-500 text-slate-950 font-bold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2.5 text-sm">
+                        <i class="fa-solid fa-camera"></i> <span id="snapBtnText">Start Auto Session (4 Shots)</span>
+                    </button>
+                    <button id="resetSessionBtn" class="btn-tactile bg-white/5 hover:bg-white/10 text-slate-300 px-4 rounded-2xl border border-white/10 transition flex items-center gap-2" title="Clear Photos">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Captured Shot Thumbnails & Retake Options -->
+            <div class="glass-panel rounded-3xl p-4 border border-white/10">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Session Frame Buffer</h3>
+                    <span class="text-[11px] text-slate-500">Click individual shot to retake</span>
+                </div>
+                <div id="shotsContainer" class="grid grid-cols-4 gap-3">
+                    <!-- Dynamic Thumbnails Rendered Here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Customizer & Strip Canvas Preview (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-5">
+            <!-- Customization Controls -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col gap-4 border border-white/10">
+                <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-palette text-rose-400"></i> Frame Customizer
+                </h2>
+
+                <!-- Frame Preset Colors -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 mb-2">Frame Color Preset</label>
+                    <div class="grid grid-cols-6 gap-2" id="frameThemePalette">
+                        <button data-theme="cream" class="h-8 rounded-xl bg-[#FAF8F5] border-2 border-slate-300 ring-2 ring-rose-400 transition" title="Milk Cream"></button>
+                        <button data-theme="pink" class="h-8 rounded-xl bg-[#FDE2E4] border-2 border-rose-200 hover:ring-2 hover:ring-rose-400 transition" title="Sakura Pink"></button>
+                        <button data-theme="sage" class="h-8 rounded-xl bg-[#E2ECE9] border-2 border-emerald-200 hover:ring-2 hover:ring-emerald-400 transition" title="Matcha Sage"></button>
+                        <button data-theme="blue" class="h-8 rounded-xl bg-[#DFE7FD] border-2 border-blue-200 hover:ring-2 hover:ring-blue-400 transition" title="Powder Blue"></button>
+                        <button data-theme="dark" class="h-8 rounded-xl bg-[#18181B] border-2 border-slate-700 hover:ring-2 hover:ring-slate-400 transition" title="Charcoal Black"></button>
+                        <button data-theme="holo" class="h-8 rounded-xl bg-gradient-to-tr from-pink-200 via-indigo-200 to-cyan-200 border-2 border-white hover:ring-2 hover:ring-rose-300 transition" title="Holographic"></button>
+                    </div>
+                </div>
+
+                <!-- Custom Signature & Headers -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1.5">Header Title</label>
+                        <input type="text" id="headerInput" maxlength="20" value="HARU PHOTOBOX" class="w-full bg-slate-900/80 border border-white/10 text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:border-rose-400/50">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1.5">Custom Signature</label>
+                        <input type="text" id="signatureInput" maxlength="24" value="with love ♡ 2026" class="w-full bg-slate-900/80 border border-white/10 text-slate-200 text-xs rounded-xl p-2.5 font-handwriting text-base focus:outline-none focus:border-rose-400/50">
+                    </div>
+                </div>
+
+                <!-- Photo Background Presets -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[11px] font-semibold text-slate-400">Photo Background</label>
+                        <span id="backgroundLabel" class="text-[10px] text-slate-500">Original</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2" id="photoBackgroundPalette">
+                        <button data-background="original" class="bg-thumb h-9 rounded-xl border-2 border-rose-400 ring-2 ring-rose-400 bg-slate-800" title="Original"></button>
+                        <button data-background="studio" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-white via-slate-100 to-slate-300" title="Studio White"></button>
+                        <button data-background="pink" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-pink-200 via-rose-100 to-fuchsia-200" title="Sakura Pink"></button>
+                        <button data-background="sunset" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-orange-300 via-pink-300 to-purple-400" title="Sunset"></button>
+                        <button data-background="night" class="bg-thumb h-9 rounded-xl border border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950" title="Night Studio"></button>
+                    </div>
+                    <p class="text-[9px] text-slate-500 mt-2">Latar belakang diterapkan sebagai efek studio pada area foto.</p>
+                </div>
+
+                <!-- Cute Sticker Overlays -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-[11px] font-semibold text-slate-400">Add Stamps & Stickers</label>
+                        <button id="clearStickersBtn" class="text-[10px] text-rose-400 hover:text-rose-300 font-semibold">Clear All</button>
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-1 text-lg" id="stickerPalette">
+                        <button data-emoji="🎀" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">🎀</button>
+                        <button data-emoji="💖" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">💖</button>
+                        <button data-emoji="✨" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">✨</button>
+                        <button data-emoji="🍒" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">🍒</button>
+                        <button data-emoji="🌸" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">🌸</button>
+                        <button data-emoji="⭐" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">⭐</button>
+                        <button data-emoji="🐾" class="sticker-btn bg-slate-900/80 hover:bg-slate-800 p-2 rounded-xl border border-white/10 transition">🐾</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music & QR Controls -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col gap-4 border border-white/10">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-slate-900/60 rounded-2xl p-3 border border-white/5">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-bold text-slate-300">Booth Music</p><p id="musicStatus" class="text-[10px] text-slate-500">Music OFF</p></div>
+                            <button id="musicToggleBtn" class="btn-tactile w-10 h-10 rounded-xl bg-pink-400 text-slate-950 flex items-center justify-center"><i id="musicIcon" class="fa-solid fa-play"></i></button>
+                        </div>
+                        <input id="musicVolume" type="range" min="0" max="1" step="0.05" value="0.18" class="w-full mt-3 accent-pink-400">
+                    </div>
+                    <div class="bg-slate-900/60 rounded-2xl p-3 border border-white/5">
+                        <p class="text-xs font-bold text-slate-300">QR Code</p><p class="text-[10px] text-slate-500 mb-2">Scan untuk membuka link</p>
+                        <input id="qrUrlInput" type="url" placeholder="https://website-kamu.com" class="w-full bg-slate-950/80 border border-white/10 text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:border-rose-400/50">
+                        <button id="generateQrBtn" class="mt-2 w-full bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-bold py-2 rounded-xl border border-white/10"><i class="fa-solid fa-qrcode mr-1"></i> Generate QR</button>
+                    </div>
+                </div>
+                <div class="flex justify-center"><div id="qrCodeBox" class="bg-white p-3 rounded-2xl min-h-[130px] min-w-[130px] flex items-center justify-center"><span class="text-slate-400 text-[10px] text-center">QR Code<br>akan muncul di sini</span></div></div>
+            </div>
+
+            <!-- Photostrip Live Canvas Render Preview -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col items-center justify-center gap-4 border border-white/10">
+                <div class="flex items-center justify-between w-full">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Strip Canvas Preview</span>
+                    <span class="text-[10px] text-slate-500">High-Res Render</span>
+                </div>
+
+                <!-- Canvas Wrapper -->
+                <div class="relative w-full max-w-[280px] flex justify-center py-1">
+                    <canvas id="stripCanvas" class="rounded-xl shadow-2xl max-w-full h-auto border border-white/10 transition-all"></canvas>
+                </div>
+
+                <!-- Export Download Button -->
+                <button id="downloadBtn" class="btn-tactile w-full bg-emerald-400 hover:bg-emerald-500 text-slate-950 font-bold py-3.5 px-5 rounded-2xl shadow-lg shadow-emerald-500/10 transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-download"></i> Download Photostrip (PNG)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-white/5 bg-slate-950/50">
+        <p>© 2026 HARU SNAP • Modern Korean Mini Photobooth</p>
+    </footer>
+
+    <script>
+        // State management
+        let stream = null;
+        let isMirrored = true;
+        let activeLayout = 'strip'; // 'strip' or 'grid'
+        let activeMode = 'auto'; // 'auto' or 'manual'
+        let capturedPhotos = [null, null, null, null];
+        let isSessionRunning = false;
+        let currentTheme = 'cream';
+        let placedStickers = [];\n        let activeBackground = 'original';
+
+        // Theme palette color definitions
+        const THEME_CONFIGS = {
+            cream: { bg: '#FAF8F5', text: '#292524', subtext: '#78716C', accent: '#D97706', border: '#E7E5E4' },
+            pink: { bg: '#FDE2E4', text: '#831843', subtext: '#9D174D', accent: '#F43F5E', border: '#FBCFE8' },
+            sage: { bg: '#E2ECE9', text: '#14532D', subtext: '#166534', accent: '#10B981', border: '#CBD5E1' },
+            blue: { bg: '#DFE7FD', text: '#1E3A8A', subtext: '#1E40AF', accent: '#3B82F6', border: '#BFDBFE' },
+            dark: { bg: '#18181B', text: '#F4F4F5', subtext: '#A1A1AA', accent: '#F43F5E', border: '#27272A' },
+            holo: { bg: 'HOLO_GRADIENT', text: '#0F172A', subtext: '#334155', accent: '#EC4899', border: '#FFFFFF' }
+        };
+
+        // Element Selectors
+        const videoFeed = document.getElementById('videoFeed');
+        const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+        const retryCameraBtn = document.getElementById('retryCameraBtn');
+        const mirrorToggleBtn = document.getElementById('mirrorToggleBtn');
+        const mirrorStateText = document.getElementById('mirrorStateText');
+        const filterSelect = document.getElementById('filterSelect');
+        const currentFilterLabel = document.getElementById('currentFilterLabel');
+        const timerSelect = document.getElementById('timerSelect');
+        const snapBtn = document.getElementById('snapBtn');
+        const snapBtnText = document.getElementById('snapBtnText');
+        const resetSessionBtn = document.getElementById('resetSessionBtn');
+        const shotCountNum = document.getElementById('shotCountNum');
+        const countdownOverlay = document.getElementById('countdownOverlay');
+        const countdownText = document.getElementById('countdownText');
+        const flashOverlay = document.getElementById('flashOverlay');
+        const shotsContainer = document.getElementById('shotsContainer');
+        const headerInput = document.getElementById('headerInput');
+        const signatureInput = document.getElementById('signatureInput');
+        const frameThemePalette = document.getElementById('frameThemePalette');
+        const stickerPalette = document.getElementById('stickerPalette');
+        const clearStickersBtn = document.getElementById('clearStickersBtn');\n        const photoBackgroundPalette = document.getElementById('photoBackgroundPalette');\n        const backgroundLabel = document.getElementById('backgroundLabel');
+        const stripCanvas = document.getElementById('stripCanvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const musicToggleBtn = document.getElementById('musicToggleBtn');
+        const musicIcon = document.getElementById('musicIcon');
+        const musicStatus = document.getElementById('musicStatus');
+        const musicVolume = document.getElementById('musicVolume');
+        const qrUrlInput = document.getElementById('qrUrlInput');
+        const generateQrBtn = document.getElementById('generateQrBtn');
+        const qrCodeBox = document.getElementById('qrCodeBox');
+
+        let audioCtx = null, musicTimer = null, musicPlaying = false, musicGain = null, musicStep = 0;
+        function startBoothMusic() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); musicGain = audioCtx.createGain(); musicGain.gain.value = parseFloat(musicVolume.value); musicGain.connect(audioCtx.destination); }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (musicPlaying) return;
+            musicPlaying = true; musicStatus.textContent='Music ON'; musicIcon.className='fa-solid fa-pause';
+            const notes=[261.63,329.63,392,329.63,293.66,349.23,440,349.23];
+            function playNote(){ if(!musicPlaying)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=notes[musicStep++%notes.length]; g.gain.setValueAtTime(.0001,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.045,audioCtx.currentTime+.03); g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.38); o.connect(g);g.connect(musicGain);o.start();o.stop(audioCtx.currentTime+.4);musicTimer=setTimeout(playNote,430); }
+            playNote();
+        }
+        function stopBoothMusic(){musicPlaying=false;clearTimeout(musicTimer);musicTimer=null;musicStatus.textContent='Music OFF';musicIcon.className='fa-solid fa-play';}
+        musicToggleBtn.addEventListener('click',()=>musicPlaying?stopBoothMusic():startBoothMusic());
+        musicVolume.addEventListener('input',()=>{if(musicGain)musicGain.gain.value=parseFloat(musicVolume.value);});
+        function generateQRCode(){const v=qrUrlInput.value.trim();qrCodeBox.innerHTML='';if(!v){qrCodeBox.innerHTML='<span class="text-slate-400 text-[10px] text-center">Masukkan URL<br>terlebih dahulu</span>';return;}new QRCode(qrCodeBox,{text:v,width:120,height:120,colorDark:'#111827',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}
+        generateQrBtn.addEventListener('click',generateQRCode);
+        qrUrlInput.addEventListener('keydown',e=>{if(e.key==='Enter')generateQRCode();});
+
+
+        async function setupWebcam() {
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' },
+                    audio: false
+                });
+                videoFeed.srcObject = stream;
+                videoFeed.classList.remove('hidden');
+                cameraPlaceholder.classList.add('hidden');
+            } catch (err) {
+                console.error("Camera permissions denied:", err);
+                videoFeed.classList.add('hidden');
+                cameraPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        if (retryCameraBtn) {
+            retryCameraBtn.addEventListener('click', setupWebcam);
+        }
+
+        // Mirror Toggle Event
+        mirrorToggleBtn.addEventListener('click', () => {
+            isMirrored = !isMirrored;
+            videoFeed.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+            mirrorStateText.textContent = isMirrored ? 'ON' : 'OFF';
+        });
+
+        // Filter Selection
+        filterSelect.addEventListener('change', (e) => {
+            const selectedFilter = e.target.value;
+            videoFeed.className = `w-full h-full object-cover transition-all duration-300 ${selectedFilter}`;
+            if (isMirrored) videoFeed.style.transform = 'scaleX(-1)';
+            currentFilterLabel.textContent = e.target.options[e.target.selectedIndex].text;
+            renderStripCanvas();
+        });
+
+        // Layout Toggle Controls
+        document.querySelectorAll('#layoutToggle .layout-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#layoutToggle .layout-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-white/10', 'text-slate-200');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('active', 'bg-white/10', 'text-slate-200');
+                activeLayout = btn.dataset.layout;
+                renderStripCanvas();
+            });
+        });
+
+        // Mode Toggle Controls
+        document.querySelectorAll('#modeToggle .mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#modeToggle .mode-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-white/10', 'text-slate-200');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('active', 'bg-white/10', 'text-slate-200');
+                activeMode = btn.dataset.mode;
+                snapBtnText.textContent = activeMode === 'auto' ? 'Start Auto Session (4 Shots)' : 'Take Single Snap';
+            });
+        });
+
+        snapBtn.addEventListener('click', async () => {
+            if (isSessionRunning) return;
+            isSessionRunning = true;
+            snapBtn.disabled = true;
+            snapBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const delay = parseInt(timerSelect.value, 10);
+
+            if (activeMode === 'auto') {
+                capturedPhotos = [null, null, null, null];
+                renderThumbnails();
+
+                for (let i = 0; i < 4; i++) {
+                    await runTimerCountdown(delay);
+                    triggerStudioFlash();
+                    captureFrameToIndex(i);
+                    renderThumbnails();
+                    renderStripCanvas();
+
+                    if (i < 3) {
+                        await new Promise(res => setTimeout(res, 800));
+                    }
+                }
+            } else {
+                // Find first empty slot or overwrite first slot
+                let emptyIndex = capturedPhotos.findIndex(p => p === null);
+                if (emptyIndex === -1) emptyIndex = 0;
+
+                await runTimerCountdown(delay);
+                triggerStudioFlash();
+                captureFrameToIndex(emptyIndex);
+                renderThumbnails();
+                renderStripCanvas();
+            }
+
+            isSessionRunning = false;
+            snapBtn.disabled = false;
+            snapBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        });
+
+        // Countdown Overlay Sequence
+        function runTimerCountdown(seconds) {
+            return new Promise((resolve) => {
+                countdownOverlay.classList.remove('hidden');
+                let count = seconds;
+                countdownText.textContent = count;
+
+                const timer = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownText.textContent = count;
+                    } else {
+                        clearInterval(timer);
+                        countdownOverlay.classList.add('hidden');
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
+        // Studio Flash Effect
+        function triggerStudioFlash() {
+            flashOverlay.classList.remove('flash-active');
+            void flashOverlay.offsetWidth;
+            flashOverlay.classList.add('flash-active');
+        }
+
+        // Capture Single Webcam Frame to Buffer
+        function captureFrameToIndex(index) {
+            if (!videoFeed.videoWidth || !videoFeed.videoHeight) {
+                alert('Kamera belum siap. Izinkan akses kamera lalu coba lagi.');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = videoFeed.videoWidth || 1280;
+            canvas.height = videoFeed.videoHeight || 960;
+            const ctx = canvas.getContext('2d');
+
+            if (isMirrored) {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+
+            // Map canvas filter
+            ctx.filter = getCanvasFilterCSS(filterSelect.value);
+            ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+
+            capturedPhotos[index] = canvas.toDataURL('image/jpeg', 0.92);
+            updateShotBadge();
+        }
+
+        function getCanvasFilterCSS(filterValue) {
+            switch(filterValue) {
+                case 'filter-film': return 'contrast(108%) brightness(102%) saturate(85%) sepia(10%)';
+                case 'filter-bw': return 'grayscale(100%) contrast(125%) brightness(95%)';
+                case 'filter-warm': return 'sepia(25%) saturate(130%) brightness(105%) hue-rotate(-10deg)';
+                case 'filter-cyber': return 'contrast(130%) hue-rotate(190deg) saturate(180%)';
+                case 'filter-soft': return 'brightness(110%) contrast(90%) saturate(115%)';
+                case 'filter-fade': return 'brightness(105%) contrast(88%) saturate(82%) sepia(8%)';
+                case 'filter-vintage': return 'contrast(112%) brightness(98%) saturate(72%) sepia(18%)';
+                case 'filter-cool': return 'contrast(105%) brightness(103%) saturate(95%) hue-rotate(8deg)';
+                default: return 'none';
+            }
+        }
+
+        function updateShotBadge() {
+            const takenCount = capturedPhotos.filter(p => p !== null).length;
+            shotCountNum.textContent = takenCount;
+        }
+
+        // Render Shot Thumbnails
+        function renderThumbnails() {
+            shotsContainer.innerHTML = '';
+            capturedPhotos.forEach((photo, idx) => {
+                const box = document.createElement('div');
+                box.className = "group relative aspect-[4/3] bg-slate-900 rounded-xl border border-white/10 overflow-hidden flex items-center justify-center cursor-pointer";
+
+                if (photo) {
+                    box.innerHTML = `
+                        <img src="${photo}" class="w-full h-full object-cover" />
+                        <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-xs text-rose-300 font-semibold gap-1">
+                            <i class="fa-solid fa-camera-rotate"></i> Retake
+                        </div>
+                    `;
+                    box.addEventListener('click', () => retakeSinglePhoto(idx));
+                } else {
+                    box.innerHTML = `<span class="text-xs font-bold text-slate-600">${idx + 1}</span>`;
+                }
+                shotsContainer.appendChild(box);
+            });
+        }
+
+        async function retakeSinglePhoto(index) {
+            if (isSessionRunning) return;
+            isSessionRunning = true;
+            await runTimerCountdown(parseInt(timerSelect.value, 10));
+            triggerStudioFlash();
+            captureFrameToIndex(index);
+            renderThumbnails();
+            renderStripCanvas();
+            isSessionRunning = false;
+        }
+
+        // Reset All Photos
+        resetSessionBtn.addEventListener('click', () => {
+            if (isSessionRunning) return;
+            capturedPhotos = [null, null, null, null];
+            updateShotBadge();
+            renderThumbnails();
+            renderStripCanvas();
+        });
+
+        // Theme Palette Switch
+        frameThemePalette.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                frameThemePalette.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-rose-400'));
+                btn.classList.add('ring-2', 'ring-rose-400');
+                currentTheme = btn.dataset.theme;
+                renderStripCanvas();
+            });
+        });
+
+        // Photo Background Handling
+        const BACKGROUND_CONFIGS = {
+            original: { label: 'Original', type: 'none' },
+            studio: { label: 'Studio White', type: 'gradient', colors: ['#ffffff', '#e2e8f0'] },
+            pink: { label: 'Sakura Pink', type: 'gradient', colors: ['#fbcfe8', '#fce7f3', '#f5d0fe'] },
+            sunset: { label: 'Sunset', type: 'gradient', colors: ['#fdba74', '#f9a8d4', '#c4b5fd'] },
+            night: { label: 'Night Studio', type: 'gradient', colors: ['#020617', '#1e1b4b', '#581c87'] }
+        };
+
+        photoBackgroundPalette.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                photoBackgroundPalette.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('ring-2', 'ring-rose-400');
+                });
+                btn.classList.add('ring-2', 'ring-rose-400');
+                activeBackground = btn.dataset.background;
+                backgroundLabel.textContent = BACKGROUND_CONFIGS[activeBackground].label;
+                renderStripCanvas();
+            });
+        });
+
+        // Sticker Overlays Handling
+        stickerPalette.querySelectorAll('.sticker-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const emoji = btn.dataset.emoji;
+                placedStickers.push({
+                    emoji: emoji,
+                    xRatio: 0.15 + Math.random() * 0.7,
+                    yRatio: 0.15 + Math.random() * 0.7
+                });
+                renderStripCanvas();
+            });
+        });
+
+        clearStickersBtn.addEventListener('click', () => {
+            placedStickers = [];
+            renderStripCanvas();
+        });
+
+        headerInput.addEventListener('input', renderStripCanvas);
+        signatureInput.addEventListener('input', renderStripCanvas);
+
+        function renderStripCanvas() {
+            const config = THEME_CONFIGS[currentTheme] || THEME_CONFIGS.cream;
+            const width = 600;
+            let height = (activeLayout === 'strip') ? 1720 : 1120;
+
+            stripCanvas.width = width;
+            stripCanvas.height = height;
+
+            const ctx = stripCanvas.getContext('2d');
+
+            // Draw Background Frame
+            if (config.bg === 'HOLO_GRADIENT') {
+                const grad = ctx.createLinearGradient(0, 0, width, height);
+                grad.addColorStop(0, '#fbcfe8');
+                grad.addColorStop(0.5, '#e0e7ff');
+                grad.addColorStop(1, '#c7d2fe');
+                ctx.fillStyle = grad;
+            } else {
+                ctx.fillStyle = config.bg;
+            }
+            ctx.fillRect(0, 0, width, height);
+
+            // Frame Border
+            ctx.strokeStyle = config.border;
+            ctx.lineWidth = 10;
+            ctx.strokeRect(5, 5, width - 10, height - 10);
+
+            // Layout Padding
+            const padding = 35;
+            const photoGap = 20;
+            const headerH = 80;
+            const footerH = 130;
+
+            if (activeLayout === 'strip') {
+                // 4-Frame Vertical Strip
+                const availableH = height - headerH - footerH - (padding * 2) - (photoGap * 3);
+                const photoW = width - (padding * 2);
+                const photoH = availableH / 4;
+
+                for (let i = 0; i < 4; i++) {
+                    const y = headerH + padding + i * (photoH + photoGap);
+                    drawSinglePhoto(ctx, capturedPhotos[i], padding, y, photoW, photoH, config, i + 1);
+                }
+            } else {
+                // 2x2 Quad Grid
+                const gridW = (width - (padding * 2) - photoGap) / 2;
+                const gridH = (height - headerH - footerH - (padding * 2) - photoGap) / 2;
+
+                for (let i = 0; i < 4; i++) {
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    const x = padding + col * (gridW + photoGap);
+                    const y = headerH + padding + row * (gridH + photoGap);
+                    drawSinglePhoto(ctx, capturedPhotos[i], x, y, gridW, gridH, config, i + 1);
+                }
+            }
+
+            // Render Header Title
+            const headerText = headerInput.value.toUpperCase() || 'HARU PHOTOBOX';
+            ctx.fillStyle = config.text;
+            ctx.font = 'bold 26px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(headerText, width / 2, 55);
+
+            // Render Footer Text & Handwritten Signature
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            ctx.fillStyle = config.subtext;
+            ctx.font = '500 16px Plus Jakarta Sans, sans-serif';
+            ctx.fillText(dateStr, width / 2, height - 70);
+
+            const sigText = signatureInput.value || 'with love ♡';
+            ctx.fillStyle = config.text;
+            ctx.font = 'bold 32px Caveat, cursive';
+            ctx.fillText(sigText, width / 2, height - 35);
+
+            // Render Stickers
+            placedStickers.forEach(sticker => {
+                ctx.font = '40px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(sticker.emoji, sticker.xRatio * width, sticker.yRatio * height);
+            });
+        }
+
+        function drawPhotoBackground(ctx, x, y, w, h) {
+            const bg = BACKGROUND_CONFIGS[activeBackground];
+            if (!bg || bg.type === 'none') return;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+
+            if (bg.type === 'gradient') {
+                const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+                bg.colors.forEach((color, i) => {
+                    grad.addColorStop(i / (bg.colors.length - 1), color);
+                });
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, w, h);
+
+                // Soft studio light
+                const glow = ctx.createRadialGradient(
+                    x + w * 0.25, y + h * 0.18, 0,
+                    x + w * 0.25, y + h * 0.18, Math.max(w, h) * 0.7
+                );
+                glow.addColorStop(0, 'rgba(255,255,255,.45)');
+                glow.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = glow;
+                ctx.fillRect(x, y, w, h);
+            }
+
+            ctx.restore();
+        }
+
+        // Draw Individual Photo Frame
+        function drawSinglePhoto(ctx, imgData, x, y, w, h, config, slotNum) {
+            ctx.fillStyle = config.border;
+            ctx.fillRect(x, y, w, h);
+
+            if (!imgData) {
+                drawPhotoBackground(ctx, x, y, w, h);
+                ctx.fillStyle = 'rgba(0,0,0,0.04)';
+                ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = config.subtext;
+                ctx.font = 'bold 20px Plus Jakarta Sans, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`FRAME ${slotNum}`, x + w / 2, y + h / 2);
+                return;
+            }
+
+            const img = new Image();
+
+            const drawLoadedImage = () => {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, w, h);
+                ctx.clip();
+
+                // Draw selected studio background first.
+                drawPhotoBackground(ctx, x, y, w, h);
+
+                const imgRatio = img.width / img.height;
+                const rectRatio = w / h;
+                let sw, sh, sx, sy;
+
+                if (imgRatio > rectRatio) {
+                    sh = img.height;
+                    sw = img.height * rectRatio;
+                    sx = (img.width - sw) / 2;
+                    sy = 0;
+                } else {
+                    sw = img.width;
+                    sh = img.width / rectRatio;
+                    sx = 0;
+                    sy = (img.height - sh) / 2;
+                }
+
+                ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+
+                if (activeBackground !== 'original') {
+                    ctx.fillStyle = activeBackground === 'night'
+                        ? 'rgba(30, 27, 75, 0.12)'
+                        : 'rgba(255, 255, 255, 0.08)';
+                    ctx.fillRect(x, y, w, h);
+                }
+
+                ctx.restore();
+            };
+
+            img.onload = drawLoadedImage;
+            img.onerror = () => {
+                drawPhotoBackground(ctx, x, y, w, h);
+            };
+            img.src = imgData;
+
+            // Cached data URLs may already be available.
+            if (img.complete && img.naturalWidth > 0) {
+                drawLoadedImage();
+            }
+        }
+
+        // High-Res PNG Download
+        downloadBtn.addEventListener('click', () => {
+            const hasPhotos = capturedPhotos.some(p => p !== null);
+            if (!hasPhotos) {
+                alert('Please take photos first before downloading!');
+                return;
+            }
+
+            const originalBtnText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Generating high-res...`;
+            downloadBtn.disabled = true;
 
             setTimeout(() => {
-              countdownEl.classList.add('hidden');
-              resolve();
-            }, 300);
-          }
-        }, 1000);
-      });
-    }
+                const link = document.createElement('a');
+                link.download = `haru-snap-${Date.now()}.png`;
+                link.href = stripCanvas.toDataURL('image/png', 1.0);
+                link.click();
 
-    function triggerFlash() {
-      flashOverlay.classList.remove('flash-active');
-      void flashOverlay.offsetWidth; // force reflow
-      flashOverlay.classList.add('flash-active');
-    }
+                downloadBtn.innerHTML = originalBtnText;
+                downloadBtn.disabled = false;
+            }, 500);
+        });
 
-    // Take Snapshot & Apply Active Filter
-    function takeSnap(slotIndex) {
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = video.videoWidth || 640;
-      tempCanvas.height = video.videoHeight || 480;
-      const tempCtx = tempCanvas.getContext('2d');
-
-      // Mirror horizontally
-      tempCtx.translate(tempCanvas.width, 0);
-      tempCtx.scale(-1, 1);
-
-      // Apply Canvas Filter Effect
-      applyCanvasFilter(tempCtx);
-
-      tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-
-      const img = new Image();
-      img.onload = () => {
-        state.photos[slotIndex] = img;
-        renderSlotsUI();
-        renderCanvas();
-      };
-      img.src = tempCanvas.toDataURL('image/png');
-    }
-
-    function applyCanvasFilter(ctx) {
-      switch (state.activeFilter) {
-        case 'bw':
-          ctx.filter = 'grayscale(100%) contrast(110%)';
-          break;
-        case 'sepia':
-          ctx.filter = 'sepia(80%) contrast(95%)';
-          break;
-        case 'vintage':
-          ctx.filter = 'sepia(30%) contrast(110%) brightness(90%) saturate(130%)';
-          break;
-        case 'warm':
-          ctx.filter = 'sepia(20%) saturate(140%) hue-rotate(-10deg)';
-          break;
-        case 'cool':
-          ctx.filter = 'saturate(120%) hue-rotate(10deg) brightness(105%)';
-          break;
-        default:
-          ctx.filter = 'none';
-      }
-    }
-
-    // Manual Upload
-    function handleFileUpload(e, index) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          state.photos[index] = img;
-          renderSlotsUI();
-          renderCanvas();
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Watermark & Color Input Listeners
-    watermarkInput.addEventListener('input', (e) => {
-      state.watermarkText = e.target.value;
-      renderCanvas();
-    });
-
-    bgColorInput.addEventListener('input', (e) => {
-      state.bgColor = e.target.value;
-      colorHex.textContent = e.target.value.toUpperCase();
-      renderCanvas();
-    });
-
-    // Custom PNG Frame Overlay Listener
-    overlayInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          state.overlayImage = img;
-          overlayStatus.classList.remove('hidden');
-          renderCanvas();
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    removeOverlayBtn.addEventListener('click', () => {
-      state.overlayImage = null;
-      overlayInput.value = '';
-      overlayStatus.classList.add('hidden');
-      renderCanvas();
-    });
-
-    // 5. Dynamic Canvas Render Engine
-    function renderCanvas() {
-      const { canvas, ctx, slotCount, photos, overlayImage, bgColor, watermarkText } = state;
-
-      // Layer 1: Background Fill
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Layout Geometry Calculations
-      const photoWidth = 520;
-      const startX = 40;
-
-      let photoHeight, startY, gapY;
-
-      if (slotCount === 3) {
-        photoHeight = 390; // Aspect Ratio 4:3
-        startY = 50;
-        gapY = 40;
-      } else {
-        photoHeight = 330; // 4 Slots Layout
-        startY = 40;
-        gapY = 25;
-      }
-
-      // Layer 2: Render Photos Grid
-      for (let idx = 0; idx < slotCount; idx++) {
-        const currentY = startY + idx * (photoHeight + gapY);
-        const img = photos[idx];
-
-        if (img) {
-          drawCoverImage(ctx, img, startX, currentY, photoWidth, photoHeight);
-        } else {
-          // Placeholder Box
-          ctx.fillStyle = '#f1f5f9';
-          ctx.fillRect(startX, currentY, photoWidth, photoHeight);
-          
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(`Foto #${idx + 1}`, canvas.width / 2, currentY + photoHeight / 2);
-        }
-      }
-
-      // Layer 3: Render Bottom Watermark / Date Stamp
-      if (watermarkText.trim() !== '') {
-        const bottomAreaY = startY + slotCount * (photoHeight + gapY);
-        const availableHeight = canvas.height - bottomAreaY;
-        
-        ctx.fillStyle = getContrastingTextColor(bgColor);
-        ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(watermarkText.toUpperCase(), canvas.width / 2, bottomAreaY + (availableHeight / 2) - 5);
-
-        // Date Stamp
-        const today = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
-        ctx.font = '500 14px "Plus Jakarta Sans", sans-serif';
-        ctx.globalAlpha = 0.7;
-        ctx.fillText(today, canvas.width / 2, bottomAreaY + (availableHeight / 2) + 20);
-        ctx.globalAlpha = 1.0;
-      }
-
-      // Layer 4: Custom Frame Overlay PNG
-      if (overlayImage) {
-        ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
-      }
-    }
-
-    function drawCoverImage(ctx, img, x, y, w, h) {
-      const imgRatio = img.width / img.height;
-      const targetRatio = w / h;
-      let sx, sy, sw, sh;
-
-      if (imgRatio > targetRatio) {
-        sh = img.height;
-        sw = img.height * targetRatio;
-        sx = (img.width - sw) / 2;
-        sy = 0;
-      } else {
-        sw = img.width;
-        sh = img.width / targetRatio;
-        sx = 0;
-        sy = (img.height - sh) / 2;
-      }
-
-      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-    }
-
-    // Smart Text Color contrast based on background hex
-    function getContrastingTextColor(hex) {
-      if (hex.indexOf('#') === 0) hex = hex.slice(1);
-      if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-      const r = parseInt(hex.slice(0, 2), 16);
-      const g = parseInt(hex.slice(2, 4), 16);
-      const b = parseInt(hex.slice(4, 6), 16);
-      return (r * 0.299 + g * 0.587 + b * 0.114) > 186 ? '#0f172a' : '#ffffff';
-    }
-
-    // Zoom Control Engine
-    zoomInBtn.addEventListener('click', () => {
-      if (state.zoomLevel < 1.5) {
-        state.zoomLevel += 0.1;
-        applyZoom();
-      }
-    });
-
-    zoomOutBtn.addEventListener('click', () => {
-      if (state.zoomLevel > 0.6) {
-        state.zoomLevel -= 0.1;
-        applyZoom();
-      }
-    });
-
-    function applyZoom() {
-      canvasWrapper.style.transform = `scale(${state.zoomLevel})`;
-      zoomLabel.textContent = `${Math.round(state.zoomLevel * 100)}%`;
-    }
-
-    // Export PNG
-    downloadBtn.addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.download = `SNAP_Studio_${Date.now()}.png`;
-      link.href = state.canvas.toDataURL('image/png');
-      link.click();
-    });
-  </script>
+        // Initialize on Load
+        window.addEventListener('load', () => {
+            setupWebcam();
+            renderThumbnails();
+            renderStripCanvas();
+        });
+    </script>
 </body>
 </html>
